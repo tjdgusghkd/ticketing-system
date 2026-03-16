@@ -5,33 +5,33 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
-### STS ###
+### STS / Eclipse
 .apt_generated
 .classpath
 .factorypath
 .project
-.settings
+.settings/
 .springBeans
-.sts4-cache
-bin/
-!**/src/main/**/bin/
-!**/src/test/**/bin/
+.sts4-cache/
+.metadata/
 
-### IntelliJ IDEA ###
-.idea
+### IntelliJ
+.idea/
 *.iws
 *.iml
 *.ipr
-out/
-!**/src/main/**/out/
-!**/src/test/**/out/
 
-### NetBeans ###
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
-
-### VS Code ###
+### VSCode
 .vscode/
+
+### Logs
+*.log
+
+### OS
+.DS_Store
+Thumbs.db
+
+### Java
+bin/
+out/
+*.class
