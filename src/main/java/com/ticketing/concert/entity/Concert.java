@@ -68,4 +68,17 @@ public class Concert {
             this.status = ConcertStatus.OPEN;
         }
     }
+    
+    public void addSchedule(ConcertSchedule schedule) {
+    	if(schedule == null) {
+    		return;
+    	}
+    	
+    	if(!this.schedules.contains(schedule)) {
+    		this.schedules.add(schedule);
+    	}
+    	
+    	schedule.assignConcert(this);
+    	
+    }
 }

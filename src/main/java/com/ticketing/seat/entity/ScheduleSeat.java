@@ -79,11 +79,18 @@ public class ScheduleSeat {
         }
     }
 
-    public void reserve() {
-        this.status = ScheduleSeatStatus.RESERVED;
+    public void booked() {
+        this.status = ScheduleSeatStatus.BOOKED;
     }
 
     public void cancel() {
         this.status = ScheduleSeatStatus.AVAILABLE;
+    }
+    
+    public void addReservation(ScheduleSeat scheduleSeat) {
+    	if(scheduleSeat == null) {
+    		return;
+    	}
+    
     }
 }
