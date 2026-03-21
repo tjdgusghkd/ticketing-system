@@ -58,11 +58,9 @@ public class ConcertSchedule {
 
     @Builder
     public ConcertSchedule(LocalDateTime startTime, LocalDateTime endTime,
-                           ScheduleStatus status, LocalDateTime createdAt, Concert concert) {
+                            Concert concert) {
         this.startTime = startTime;
         this.endTime = endTime;
-        this.status = status;
-        this.createdAt = createdAt;
         this.concert = concert;
     }
 
@@ -74,5 +72,25 @@ public class ConcertSchedule {
         if (this.createdAt == null) {
             this.createdAt = LocalDateTime.now();
         }
+    }
+    
+    public void assignConcert(Concert concert) {
+    	if(concert != null) {
+    		this.concert = concert;
+    	}
+    }
+    
+    public void addScheduleSeat(ScheduleSeat scheduleSeat) {
+    	if(scheduleSeat == null) {
+    		return;
+    	}
+    	
+    	if(!this.scheduleSeats.contains(scheduleSeat)) {
+    		this.scheduleSeats.add(scheduleSeat);
+    	}
+    	
+    	if(scheduleSeat.getSchedule() != this) {
+    		scheduleSeat.assignSchedule(this);
+    	}
     }
 }
