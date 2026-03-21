@@ -89,6 +89,8 @@ public class Member {
 			this.reservations.add(reservation);
 		}
 		
-		reservation.assignMember(this);
+		if(reservation.getMember() != this) {
+			reservation.assignMember(this);
+		}
 	}
 }

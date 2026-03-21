@@ -49,6 +49,19 @@ public class Seat {
         this.section = section;
         this.rowNumber = rowNumber;
     }
-
+    
+    public void addScheduleSeat(ScheduleSeat scheduleSeat) {
+    	if(scheduleSeat == null) {
+    		return;
+    	}
+    	
+    	if(!this.scheduleSeats.contains(scheduleSeat)) {
+    		this.getScheduleSeats().add(scheduleSeat);
+    	}
+    	
+    	if(scheduleSeat.getSeat() != this) {
+    		scheduleSeat.assignSeat(this);
+    	}
+    }
     
 }

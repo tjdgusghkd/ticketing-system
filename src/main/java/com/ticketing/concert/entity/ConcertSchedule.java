@@ -75,6 +75,22 @@ public class ConcertSchedule {
     }
     
     public void assignConcert(Concert concert) {
-    	this.concert = concert;
+    	if(concert != null) {
+    		this.concert = concert;
+    	}
+    }
+    
+    public void addScheduleSeat(ScheduleSeat scheduleSeat) {
+    	if(scheduleSeat == null) {
+    		return;
+    	}
+    	
+    	if(!this.scheduleSeats.contains(scheduleSeat)) {
+    		this.scheduleSeats.add(scheduleSeat);
+    	}
+    	
+    	if(scheduleSeat.getSchedule() != this) {
+    		scheduleSeat.assignSchedule(this);
+    	}
     }
 }

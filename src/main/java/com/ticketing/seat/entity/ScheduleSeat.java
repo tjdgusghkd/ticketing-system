@@ -87,10 +87,34 @@ public class ScheduleSeat {
         this.status = ScheduleSeatStatus.AVAILABLE;
     }
     
-    public void addReservation(ScheduleSeat scheduleSeat) {
-    	if(scheduleSeat == null) {
+    public void addReservation(Reservation reservation) {
+    	if(reservation == null) {
     		return;
     	}
+    	
+    	if(!this.reservations.contains(reservation)) {
+    		this.reservations.add(reservation);
+    	}
+    	
+    	if(reservation.getScheduleSeat() != this) {
+    		reservation.assignScheduleSeat(this);
+    	}
+    }
     
+   public void assignSeat(Seat seat) {
+    	if(seat == null) {
+    		return;
+    	}
+    	
+    	this.seat = seat;
+    }
+    
+    public void assignSchedule(ConcertSchedule schedule) {
+    	if(schedule == null) {
+    		return;
+    	}
+    	
+    	
+    	this.schedule = schedule;
     }
 }

@@ -78,7 +78,8 @@ public class Concert {
     		this.schedules.add(schedule);
     	}
     	
-    	schedule.assignConcert(this);
-    	
+    	if(schedule.getConcert() != this) {
+    		schedule.assignConcert(this);
+    	}
     }
 }
