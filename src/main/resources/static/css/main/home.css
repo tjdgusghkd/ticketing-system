@@ -1,0 +1,248 @@
+.home-main {
+  padding-top: 18px;
+  padding-bottom: 24px;
+}
+
+.date-search-section {
+  background: #12131d;
+  border-radius: 20px;
+  padding: 24px 24px 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+}
+
+.section-title-wrap {
+  margin-bottom: 18px;
+}
+
+.section-title-wrap h1 {
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  margin-bottom: 8px;
+}
+
+.section-title-wrap p {
+  color: #a7a7b6;
+  font-size: 14px;
+}
+
+.date-search-box {
+  display: flex;
+  align-items: end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.date-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.date-input-group label {
+  color: #c9cad6;
+  font-size: 14px;
+}
+
+.date-input-group input[type="date"] {
+  min-width: 220px;
+  height: 48px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #191b27;
+  color: #f4f4f8;
+  border-radius: 14px;
+  padding: 0 14px;
+}
+
+.search-btn {
+  height: 48px;
+  padding: 0 22px;
+  border-radius: 14px;
+  background: #d38cff;
+  color: #171321;
+  font-weight: 700;
+}
+
+.concert-list-section {
+  margin-bottom: 0;
+}
+
+.list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.list-header h2 {
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.result-count {
+  color: #a7a7b6;
+  font-size: 14px;
+}
+
+.concert-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.concert-item {
+  background: #12131d;
+  border-radius: 20px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+}
+
+.concert-main {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.concert-thumb {
+  width: 82px;
+  height: 82px;
+  border-radius: 16px;
+  flex-shrink: 0;
+}
+
+.thumb-purple {
+  background: linear-gradient(135deg, #5f2ca5, #141520);
+}
+
+.thumb-orange {
+  background: linear-gradient(135deg, #ff8b38, #1b1511);
+}
+
+.thumb-cyan {
+  background: linear-gradient(135deg, #33dfff, #12202a);
+}
+
+.concert-info {
+  flex: 1;
+}
+
+.concert-badge {
+  display: inline-block;
+  margin-bottom: 8px;
+  padding: 5px 10px;
+  border-radius: 10px;
+  background: rgba(211, 140, 255, 0.16);
+  color: #d38cff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.concert-info h3 {
+  font-size: 22px;
+  margin-bottom: 8px;
+}
+
+.concert-place,
+.concert-genre,
+.concert-date {
+  color: #aeb1bf;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.schedule-box {
+  background: #171822;
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.schedule-box h4 {
+  font-size: 14px;
+  margin-bottom: 10px;
+  color: #f0f0f6;
+}
+
+.schedule-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.schedule-chip {
+  min-width: 74px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  background: #242635;
+  color: #f4f4f8;
+  font-weight: 600;
+}
+
+.schedule-chip:hover {
+  background: #d38cff;
+  color: #171321;
+}
+
+.concert-action {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.price-info {
+  color: #00e8ff;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.reserve-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 20px;
+  border-radius: 12px;
+  background: #d38cff;
+  color: #171321;
+  font-weight: 700;
+}
+
+/* 푸터 위 공간 축소 */
+.footer {
+  margin-top: 24px;
+}
+
+@media (max-width: 768px) {
+  .home-main {
+    padding-left: 18px;
+    padding-right: 18px;
+    padding-bottom: 18px;
+  }
+
+  .section-title-wrap h1 {
+    font-size: 28px;
+  }
+
+  .concert-main {
+    align-items: flex-start;
+  }
+
+  .concert-thumb {
+    width: 72px;
+    height: 72px;
+  }
+
+  .concert-info h3 {
+    font-size: 19px;
+  }
+
+  .list-header h2 {
+    font-size: 22px;
+  }
+}

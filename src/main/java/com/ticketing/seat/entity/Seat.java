@@ -35,8 +35,8 @@ public class Seat {
     @Column(name = "SECTION", nullable = false, length = 50)
     private String section;
 
-    @Column(name = "ROW_NUMBER", nullable = false, length = 20)
-    private String rowNumber;
+    @Column(name = "ROW_NUM", nullable = false, length = 20)
+    private String rowNum;
 
 
     @OneToMany(mappedBy = "seat")
@@ -47,7 +47,7 @@ public class Seat {
         this.seatNumber = seatNumber;
         this.price = price;
         this.section = section;
-        this.rowNumber = rowNumber;
+        this.rowNum = rowNumber;
     }
     
     public void addScheduleSeat(ScheduleSeat scheduleSeat) {

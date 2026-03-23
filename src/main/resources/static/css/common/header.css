@@ -1,0 +1,53 @@
+.header {
+  height: 72px;
+  padding: 0 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.logo a {
+  color: #da8cff;
+  font-size: 20px;
+  font-style: italic;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.nav {
+  display: flex;
+  gap: 36px;
+  margin-left: 24px;
+  flex: 1;
+}
+
+.nav a {
+  color: #d7d7de;
+  font-size: 17px;
+}
+
+.auth-buttons {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.auth-buttons .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-login {
+  color: #ffffff;
+  font-weight: 500;
+}
+
+.btn-signup {
+  background: #d38cff;
+  color: #161321;
+  padding: 14px 26px;
+  border-radius: 14px;
+  font-weight: 700;
+}
