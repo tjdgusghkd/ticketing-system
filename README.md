@@ -1,4 +1,5 @@
-# Ticketing System
+# Ticketing System 
+>동일 좌석에 대한 동시 접근 상황에서 발생하는 **중복 예매 문제를 해결하는 티켓팅 시스템**
 
 콘서트 예매 상황을 가정하여,  
 사용자가 공연과 회차를 조회하고 좌석을 선택하여 예매할 수 있는 **티켓팅 시스템**입니다.
@@ -123,12 +124,14 @@
 - RESERVATION
 
 ### 관계 요약
+```mermaid
 erDiagram
     MEMBER ||--o{ RESERVATION : makes
     CONCERT ||--o{ CONCERT_SCHEDULE : has
     CONCERT_SCHEDULE ||--o{ SCHEDULE_SEAT : contains
     SEAT ||--o{ SCHEDULE_SEAT : provides
     RESERVATION ||--|| SCHEDULE_SEAT : reserves
+```
 
 ---
 
@@ -147,12 +150,16 @@ erDiagram
 ## 8. 동시성 제어 전략
 
 티켓팅 시스템에서는 여러 사용자가 동시에 동일 좌석을 예매하려고 시도할 수 있습니다.  
-이 문제를 해결하기 위해 다음 전략을 적용할 예정입니다.
+이 문제를 해결하기 위해 다음 전략을 적용합니다.
 
-- Redis를 활용한 좌석 선점
-- 회차별 좌석 기준 예약 처리
-- DB 제약조건을 통한 중복 예약 방지
-- 부하 테스트를 통한 동작 검증
+- Redis 기반 좌석 선점 (TTL 5분)
+- 동일 좌석에 대한 중복 요청 시 선점 상태 확인 후 차단
+- `SCHEDULE_SEAT` 기준 Unique 제약조건으로 DB 레벨 이중 방어
+- 예매 처리 시 트랜잭션을 통해 데이터 정합성 유지
+- Redis를 활용하여 DB 부하를 줄이고 빠른 선점 처리를 수행 
+
+또한, 부하 테스트 도구(k6/JMeter)를 활용하여  
+동시 요청 상황에서의 실패 케이스 및 처리 성능을 검증할 예정입니다.
 
 ---
 
@@ -192,3 +199,17 @@ src/main/java/com/ticketing
      ├─ entity
      ├─ repository
      └─ service
+```
+## 10. 진행 현황
+
+- [x] 프로젝트 초기 세팅
+- [x] ERD 설계
+- [x] 엔티티 설계
+- [ ] 공연 목록/상세 조회
+- [ ] 회차별 좌석 조회
+- [ ] 회원가입 / 로그인
+- [ ] 예매 기능
+- [ ] 예매 취소
+- [ ] Redis 기반 좌석 선점
+- [ ] 동시성 제어
+- [ ] 부하 테스트
