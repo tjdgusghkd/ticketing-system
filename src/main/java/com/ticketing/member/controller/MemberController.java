@@ -1,14 +1,16 @@
 package com.ticketing.member.controller;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 
-import com.ticketing.member.dto.MemberLoginRequest;
-import com.ticketing.member.dto.MemberResponse;
 import com.ticketing.member.dto.MemberSignupRequest;
 import com.ticketing.member.service.MemberService;
 
@@ -21,28 +23,33 @@ public class MemberController {
 
     private final MemberService memberService;
     
+    // 회원가입 페이지 매핑
     @GetMapping("/signup")
     public String signupPage() {
     	return "member/signup";
     }
     
-    @PostMapping("/signup")
-    public Long signup(@RequestBody MemberSignupRequest request) {
-        return memberService.signup(request);
-    }
-    
+    // 로그인 페이지 매핑
     @GetMapping("/signin")
     public String signinPage() {
     	return "member/signin";
     }
-
-    @PostMapping("/login")
-    public MemberResponse login(@RequestBody MemberLoginRequest request) {
-        return memberService.login(request);
+    
+    // 아이디 중복확인 로직
+    @GetMapping("/check-id")
+    @ResponseBody
+    public Map<String, Boolean> checkId(@RequestParam("loginId") String loginId){
+    	boolean available = memberService.isIdAvailable(loginId);
+    	
+    	Map<String, Boolean> result = new HashMap<String, Boolean>();
+    	result.put("available", available);
+    	return result;
     }
-
-    @GetMapping("/{id}")
-    public MemberResponse find(@PathVariable Long id) {
-        return memberService.findMember(id);
+    
+    // 회원가입 로직
+    @PostMapping("/signup")
+    public String signup(@ModelAttribute MemberSignupRequest dto) {
+    	memberService.signup(dto);
+    	return "redirect:/";
     }
 }

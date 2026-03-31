@@ -62,12 +62,14 @@ public class Member {
 	
 	 @Builder
 	    public Member(String loginId, String password, String email, String phone,
-	                  Gender gender) {
+	                  Gender gender, MemberStatus status) {
 	        this.loginId = loginId;
 	        this.password = password;
 	        this.email = email;
 	        this.phone = phone;
 	        this.gender = gender;
+	        this.status = status;
+	        
 	    }
 	
 	@PrePersist
