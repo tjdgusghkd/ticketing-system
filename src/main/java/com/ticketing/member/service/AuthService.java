@@ -67,6 +67,12 @@ public class AuthService {
 
         return new TokenResponse("Bearer", newAccessToken, refreshToken);
     }
+
+	@Transactional
+	public void logout(String name) {
+		stringRedisTemplate.delete("RT:"+name);
+		
+	}
 	
 	
 }

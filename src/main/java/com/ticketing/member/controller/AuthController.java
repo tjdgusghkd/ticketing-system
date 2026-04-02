@@ -1,6 +1,7 @@
 package com.ticketing.member.controller;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -29,4 +30,11 @@ public class AuthController {
     public ResponseEntity<TokenResponse> reissue(@RequestBody TokenReissueRequest request) {
         return ResponseEntity.ok(authService.reissue(request));
     }
+    
+    @PostMapping("/logout")
+    public ResponseEntity<String> logout(Authentication authentication) {
+    	authService.logout(authentication.getName());
+    	return ResponseEntity.ok("로그아웃 완료");
+    }
+    
 }
