@@ -76,4 +76,18 @@ public class Reservation {
         this.reservationStatus = ReservationStatus.CANCELED;
         this.canceledAt = LocalDateTime.now();
     }
+    
+    public void assignMember(Member member) {
+    	if(member == null) {
+    		return;
+    	}
+    	this.member = member;
+    }
+    
+    public void assignScheduleSeat(ScheduleSeat scheduleSeat) {
+    	if(scheduleSeat == null) {
+    		return;
+    	}
+    	this.scheduleSeat = scheduleSeat;
+    }
 }

@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>네온펄스</title>
+
+  <link rel="stylesheet" th:href="@{/css/common/reset.css}" />
+  <link rel="stylesheet" th:href="@{/css/common/layout.css}" />
+  <link rel="stylesheet" th:href="@{/css/common/header.css}" />
+  <link rel="stylesheet" th:href="@{/css/common/footer.css}" />
+  <link rel="stylesheet" th:href="@{/css/main/home.css}" />
+</head>
+<body>
+  <div class="page">
+    <div th:replace="~{common/header :: header}"></div>
+
+    <main class="main home-main">
+      <section class="date-search-section">
+        <div class="section-title-wrap">
+          <h1>공연 일정 조회</h1>
+          <p>날짜를 선택하면 해당 날짜의 공연 목록과 회차를 확인할 수 있습니다.</p>
+        </div>
+
+        <form class="date-search-box" method="get" th:action="@{/}">
+          <div class="date-input-group">
+            <label for="selectedDate">관람 날짜</label>
+            <input type="date" id="selectedDate" name="date" />
+          </div>
+          <button type="submit" class="search-btn">조회</button>
+        </form>
+      </section>
+
+      <section class="concert-list-section">
+        <div class="list-header">
+          <h2>2026-03-22 공연 목록</h2>
+          <span class="result-count">총 3건</span>
+        </div>
+
+        <div class="concert-list">
+          <article class="concert-item">
+            <div class="concert-main">
+              <div class="concert-thumb thumb-purple"></div>
+
+              <div class="concert-info">
+                <div class="concert-badge">예매가능</div>
+                <h3>신스웨이브 레볼루션</h3>
+                <p class="concert-place">KSPO DOME, 서울</p>
+                <p class="concert-genre">장르 : 일렉트로닉 / 신스팝</p>
+                <p class="concert-date">공연일 : 2026-03-22</p>
+              </div>
+            </div>
+
+            <div class="schedule-box">
+              <h4>회차 정보</h4>
+              <div class="schedule-list">
+                <button type="button" class="schedule-chip">14:00</button>
+                <button type="button" class="schedule-chip">17:00</button>
+                <button type="button" class="schedule-chip">20:00</button>
+              </div>
+            </div>
+
+            <div class="concert-action">
+              <div class="price-info">예매가 89,000원</div>
+              <a href="#" class="reserve-btn">예매하기</a>
+            </div>
+          </article>
+
+          <article class="concert-item">
+            <div class="concert-main">
+              <div class="concert-thumb thumb-orange"></div>
+
+              <div class="concert-info">
+                <div class="concert-badge">예매가능</div>
+                <h3>사이버 에코즈</h3>
+                <p class="concert-place">올림픽홀, 서울</p>
+                <p class="concert-genre">장르 : 밴드 / 록</p>
+                <p class="concert-date">공연일 : 2026-03-22</p>
+              </div>
+            </div>
+
+            <div class="schedule-box">
+              <h4>회차 정보</h4>
+              <div class="schedule-list">
+                <button type="button" class="schedule-chip">15:00</button>
+                <button type="button" class="schedule-chip">19:30</button>
+              </div>
+            </div>
+
+            <div class="concert-action">
+              <div class="price-info">예매가 65,000원</div>
+              <a href="#" class="reserve-btn">예매하기</a>
+            </div>
+          </article>
+
+          <article class="concert-item">
+            <div class="concert-main">
+              <div class="concert-thumb thumb-cyan"></div>
+
+              <div class="concert-info">
+                <div class="concert-badge">예매가능</div>
+                <h3>펄스 제너레이션</h3>
+                <p class="concert-place">잠실실내체육관, 서울</p>
+                <p class="concert-genre">장르 : 퍼포먼스 / 라이브</p>
+                <p class="concert-date">공연일 : 2026-03-22</p>
+              </div>
+            </div>
+
+            <div class="schedule-box">
+              <h4>회차 정보</h4>
+              <div class="schedule-list">
+                <button type="button" class="schedule-chip">13:00</button>
+                <button type="button" class="schedule-chip">18:00</button>
+                <button type="button" class="schedule-chip">21:00</button>
+              </div>
+            </div>
+
+            <div class="concert-action">
+              <div class="price-info">예매가 110,000원</div>
+              <a href="#" class="reserve-btn">예매하기</a>
+            </div>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <div th:replace="~{common/footer :: footer}"></div>
+  </div>
+
+  <script th:src="@{/js/main.js}"></script>
+</body>
+</html>

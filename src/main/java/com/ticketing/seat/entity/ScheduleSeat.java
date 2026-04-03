@@ -79,11 +79,42 @@ public class ScheduleSeat {
         }
     }
 
-    public void reserve() {
-        this.status = ScheduleSeatStatus.RESERVED;
+    public void booked() {
+        this.status = ScheduleSeatStatus.BOOKED;
     }
 
     public void cancel() {
         this.status = ScheduleSeatStatus.AVAILABLE;
+    }
+    
+    public void addReservation(Reservation reservation) {
+    	if(reservation == null) {
+    		return;
+    	}
+    	
+    	if(!this.reservations.contains(reservation)) {
+    		this.reservations.add(reservation);
+    	}
+    	
+    	if(reservation.getScheduleSeat() != this) {
+    		reservation.assignScheduleSeat(this);
+    	}
+    }
+    
+   public void assignSeat(Seat seat) {
+    	if(seat == null) {
+    		return;
+    	}
+    	
+    	this.seat = seat;
+    }
+    
+    public void assignSchedule(ConcertSchedule schedule) {
+    	if(schedule == null) {
+    		return;
+    	}
+    	
+    	
+    	this.schedule = schedule;
     }
 }
