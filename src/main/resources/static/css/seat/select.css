@@ -1,0 +1,268 @@
+body {
+  background: #eef0f5;
+  color: #111;
+}
+
+.seat-page {
+  min-height: 100vh;
+}
+
+.seat-header {
+  height: 84px;
+  background: #fff;
+  border-bottom: 1px solid #e2e5ec;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 48px;
+}
+
+.seat-header-left {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+
+.seat-logo {
+  font-size: 22px;
+  font-weight: 800;
+  color: #5a5cf0;
+}
+
+.seat-show-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 16px;
+}
+
+.seat-show-info strong {
+  font-size: 18px;
+}
+
+.seat-header-right {
+  display: flex;
+  gap: 24px;
+}
+
+.seat-header-right a {
+  color: #333;
+  font-weight: 600;
+}
+
+.seat-layout-wrap {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  min-height: calc(100vh - 84px);
+}
+
+.seat-map-section {
+  padding: 24px;
+}
+
+.seat-map-area {
+  position: relative;
+  background: #dfe2ea;
+  border-radius: 8px;
+  min-height: 760px;
+  padding: 80px 60px 60px;
+  overflow: hidden;
+}
+
+.stage {
+  width: 280px;
+  height: 140px;
+  border-radius: 14px;
+  background: #bcc2d1;
+  margin: 0 auto 60px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 28px;
+  font-weight: 800;
+  color: white;
+}
+
+.seat-zone {
+  position: absolute;
+  background: rgba(255,255,255,0.72);
+  border-radius: 12px;
+  padding: 18px;
+}
+
+.zone-a {
+  left: 120px;
+  top: 270px;
+  transform: rotate(-18deg);
+}
+
+.zone-b {
+  right: 120px;
+  top: 270px;
+  transform: rotate(18deg);
+}
+
+.zone-c {
+  left: 50%;
+  bottom: 90px;
+  transform: translateX(-50%);
+}
+
+.zone-title {
+  text-align: center;
+  font-size: 22px;
+  font-weight: 800;
+  margin-bottom: 12px;
+  color: #5b5f6f;
+}
+
+.seat-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 18px);
+  gap: 8px;
+}
+
+.seat-grid.wide {
+  grid-template-columns: repeat(12, 18px);
+}
+
+.seat-btn {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: #f8f9fc;
+  border: 1px solid #d2d7e3;
+  cursor: pointer;
+  transition: 0.15s ease;
+}
+
+.seat-btn:hover {
+  transform: scale(1.12);
+}
+
+.seat-btn.selected {
+  background: #6b6ff6;
+  border-color: #6b6ff6;
+}
+
+.seat-btn.reserved {
+  background: #aeb4c2;
+  border-color: #aeb4c2;
+  cursor: not-allowed;
+}
+
+.legend-box {
+  position: absolute;
+  left: 24px;
+  bottom: 24px;
+  background: #fff;
+  border-radius: 999px;
+  padding: 12px 18px;
+  display: flex;
+  gap: 16px;
+  font-size: 13px;
+  color: #444;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+}
+
+.legend {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+.legend.available {
+  background: #f8f9fc;
+  border: 1px solid #d2d7e3;
+}
+
+.legend.selected {
+  background: #6b6ff6;
+}
+
+.legend.reserved {
+  background: #aeb4c2;
+}
+
+.seat-side-panel {
+  background: #fff;
+  border-left: 1px solid #e2e5ec;
+  padding: 28px 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+.seat-side-panel h2 {
+  font-size: 34px;
+  font-weight: 800;
+  margin-bottom: 28px;
+}
+
+.selected-seat-list {
+  flex: 1;
+  border-bottom: 1px solid #eceff5;
+  padding-bottom: 20px;
+}
+
+.empty-text {
+  color: #999;
+  font-size: 16px;
+  text-align: center;
+  margin-top: 140px;
+}
+
+.selected-seat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f6f7fb;
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+}
+
+.price-summary {
+  padding: 20px 0;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  font-size: 16px;
+}
+
+.summary-row strong {
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.complete-btn {
+  width: 100%;
+  height: 64px;
+  border-radius: 14px;
+  background: #d8dbe4;
+  color: white;
+  font-size: 28px;
+  font-weight: 800;
+  cursor: not-allowed;
+}
+
+.complete-btn.active {
+  background: #6b6ff6;
+  cursor: pointer;
+}
+
+@media (max-width: 1200px) {
+  .seat-layout-wrap {
+    grid-template-columns: 1fr;
+  }
+
+  .seat-side-panel {
+    border-left: none;
+    border-top: 1px solid #e2e5ec;
+  }
+}

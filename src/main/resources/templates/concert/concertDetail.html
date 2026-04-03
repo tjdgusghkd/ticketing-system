@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title th:text="|${concert.title} - 티켓랩|">티켓랩</title>
+
+  <link rel="stylesheet" th:href="@{/css/common/reset.css}" />
+  <link rel="stylesheet" th:href="@{/css/common/layout.css}" />
+  <link rel="stylesheet" th:href="@{/css/common/header.css}" />
+  <link rel="stylesheet" th:href="@{/css/common/footer.css}" />
+  <link rel="stylesheet" th:href="@{/css/concert/concertdetail.css}" />
+</head>
+<body>
+  <div class="page">
+    <div th:replace="~{common/header :: header}"></div>
+
+    <main class="main detail-main">
+      <section class="detail-hero">
+        <div class="detail-poster">
+          <img th:src="@{${concert.posterUrl}}" th:alt="${concert.title}" />
+        </div>
+
+        <div class="detail-info">
+          <span class="detail-badge"
+                th:text="${#lists.isEmpty(concert.schedules) ? 'OPEN' : concert.schedules[0].status}">
+            OPEN
+          </span>
+
+          <h1 th:text="${concert.title}">공연 제목</h1>
+          <p class="detail-artist" th:text="${concert.artist}">아티스트</p>
+          <p class="detail-description" th:text="${concert.description}">
+            공연 설명
+          </p>
+
+          <div class="detail-meta">
+            <div class="meta-item">
+              <span class="meta-label">공연일</span>
+              <span class="meta-value"
+                    th:if="${!#lists.isEmpty(concert.schedules)}"
+                    th:text="|${#temporals.format(concert.schedules[0].concertDate, 'yyyy.MM.dd')} ~ ${#temporals.format(concert.schedules[concert.schedules.size() - 1].concertDate, 'yyyy.MM.dd')}|">
+                2026.05.10 ~ 2026.05.11
+              </span>
+            </div>
+
+            <div class="meta-item">
+              <span class="meta-label">관람시간</span>
+              <span class="meta-value">약 120분</span>
+            </div>
+
+            <div class="meta-item">
+              <span class="meta-label">관람등급</span>
+              <span class="meta-value">만 7세 이상</span>
+            </div>
+
+            <div class="meta-item">
+              <span class="meta-label">가격</span>
+              <span class="meta-value highlight">전석 TICKETLAB 특가</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="detail-content-grid">
+        <div class="detail-left">
+          <section class="detail-section">
+            <div class="section-head">
+              <h2>공연 소개</h2>
+            </div>
+            <div class="section-body intro-box">
+              <p th:text="${concert.description}">
+                공연 상세 설명
+              </p>
+            </div>
+          </section>
+
+          <section class="detail-section">
+            <div class="section-head">
+              <h2>회차 선택</h2>
+              <p>예매할 회차를 먼저 선택해주세요.</p>
+            </div>
+
+            <div class="schedule-grid" th:if="${!#lists.isEmpty(concert.schedules)}">
+              <button type="button"
+                      class="schedule-card"
+                      th:each="schedule : ${concert.schedules}"
+                      th:data-schedule-no="${schedule.scheduleNo}"
+                      th:onclick="|selectSchedule(${schedule.scheduleNo}, this)|">
+                <span class="schedule-date"
+                      th:text="${#temporals.format(schedule.concertDate, 'MM.dd')}">
+                  05.10
+                </span>
+                <span class="schedule-week"
+                      th:text="${#temporals.dayOfWeekName(schedule.concertDate)}">
+                  토요일
+                </span>
+                <span class="schedule-time"
+                      th:text="|${#temporals.format(schedule.startTime, 'HH:mm')} ~ ${#temporals.format(schedule.endTime, 'HH:mm')}|">
+                  18:00 ~ 21:00
+                </span>
+                <span class="schedule-status"
+                      th:text="${schedule.status}">
+                  OPEN
+                </span>
+              </button>
+            </div>
+
+            <div class="empty-box" th:if="${#lists.isEmpty(concert.schedules)}">
+              현재 예매 가능한 회차가 없습니다.
+            </div>
+          </section>
+
+          <section class="detail-section">
+            <div class="section-head">
+              <h2>예매 안내</h2>
+            </div>
+            <div class="section-body notice-box">
+              <ul>
+                <li>회차 선택 후 예매하기 버튼을 눌러 좌석을 확인할 수 있습니다.</li>
+                <li>선택한 회차 기준으로 좌석 및 예매 진행이 가능합니다.</li>
+                <li>예매 완료 후 마이페이지에서 예매 내역을 확인할 수 있습니다.</li>
+              </ul>
+            </div>
+          </section>
+        </div>
+
+        <aside class="detail-right">
+          <div class="booking-panel">
+            <h3>예매 정보</h3>
+
+            <div class="booking-row">
+              <span>공연명</span>
+              <strong th:text="${concert.title}">공연 제목</strong>
+            </div>
+
+            <div class="booking-row">
+              <span>선택 회차</span>
+              <strong id="selectedScheduleText">회차를 선택해주세요</strong>
+            </div>
+
+            <div class="booking-row">
+              <span>가격</span>
+              <strong class="price-text">전석 TICKETLAB 특가</strong>
+            </div>
+
+            <button type="button" id="reserveBtn" class="reserve-btn" disabled onclick="goReserve()">
+              예매하기
+            </button>
+          </div>
+        </aside>
+      </section>
+    </main>
+
+    <div th:replace="~{common/footer :: footer}"></div>
+  </div>
+
+  <script th:src="@{/js/concert/concertDetail.js}"></script>
+</body>
+</html>

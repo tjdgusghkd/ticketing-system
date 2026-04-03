@@ -29,7 +29,7 @@ public class SecurityConfig {
 
     @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter() {
-        return new JwtAuthenticationFilter(jwtTokenProvider);
+        return new JwtAuthenticationFilter(jwtTokenProvider, customUserDetailsService);
     }
 
     @Bean
@@ -50,8 +50,9 @@ public class SecurityConfig {
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                "/", "/members/signup", "/api/auth/login", "/api/auth/reissue",
-                                "/css/**", "/js/**", "/images/**", "/members/signin"
+                                "/", "/members/**", "/api/auth/login", "/api/auth/reissue",
+                                "/css/**", "/js/**", "/image/**","/concerts/{concertNo}",
+                                "/rounds/{scheduleNo}/seats"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
