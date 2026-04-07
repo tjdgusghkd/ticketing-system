@@ -3,7 +3,7 @@
 <body>
   <header class="header" th:fragment="header">
     <div class="logo">
-      <a th:href="@{/}">NEONPULSE</a>
+      <a th:href="@{/}">TICKETLAB</a>
     </div>
 
     <nav class="nav">
@@ -12,10 +12,9 @@
       <a th:href="@{/reservations}">예매내역</a>
     </nav>
 
-    <div class="auth-buttons">
-      <a class="btn btn-login" th:href="@{/members/signin}">로그인</a>
-      <a class="btn btn-signup" th:href="@{/members/signup}">회원가입</a>
+    <div class="auth-buttons" id="auth-section">
     </div>
   </header>
+  <script th:src="@{/js/main.js}"></script> 
 </body>
 </html>

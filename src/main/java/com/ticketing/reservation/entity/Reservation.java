@@ -2,6 +2,7 @@ package com.ticketing.reservation.entity;
 
 import java.time.LocalDateTime;
 
+import com.ticketing.concert.entity.ConcertSchedule;
 import com.ticketing.member.entity.Member;
 import com.ticketing.reservation.enums.ReservationStatus;
 import com.ticketing.seat.entity.ScheduleSeat;
@@ -51,14 +52,19 @@ public class Reservation {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "SCHEDULE_SEAT_NO", nullable = false)
     private ScheduleSeat scheduleSeat;
+    
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "SCHEDULE_NO", nullable = false) // 추가: 회차 정보를 직접 참조
+    private ConcertSchedule schedule;
 
     @Builder
     public Reservation(ReservationStatus reservationStatus, LocalDateTime reservedAt,
-                       LocalDateTime canceledAt, Member member, ScheduleSeat scheduleSeat) {
+                       LocalDateTime canceledAt, Member member, ConcertSchedule schedule, ScheduleSeat scheduleSeat) {
         this.reservationStatus = reservationStatus;
         this.reservedAt = reservedAt;
         this.canceledAt = canceledAt;
         this.member = member;
+        this.schedule = schedule;
         this.scheduleSeat = scheduleSeat;
     }
 
@@ -89,5 +95,9 @@ public class Reservation {
     		return;
     	}
     	this.scheduleSeat = scheduleSeat;
+    }
+    
+    public void assignSchedule(ConcertSchedule schedule) {
+        this.schedule = schedule;
     }
 }

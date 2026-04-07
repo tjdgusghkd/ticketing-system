@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>좌석 선택 - 티켓랩</title>
+
+  <link rel="stylesheet" th:href="@{/css/common/reset.css}" />
+  <link rel="stylesheet" th:href="@{/css/common/layout.css}" />
+  <link rel="stylesheet" th:href="@{/css/seat/select.css}" />
+</head>
+<body>
+  <div class="seat-page">
+    <header class="seat-header">
+      <div class="seat-header-left">
+        <h1 class="seat-logo">TICKETLAB</h1>
+        <div class="seat-show-info">
+          <strong th:text="${concertTitle}">공연명</strong>
+          <span th:text="|회차 ${scheduleDateTime}|">회차 2026-05-05 14:00</span>
+        </div>
+      </div>
+
+      <div class="seat-header-right">
+        <a href="/mypage">마이페이지</a>
+        <a href="/reservations">예매확인/취소</a>
+      </div>
+    </header>
+
+    <main class="seat-layout-wrap">
+      <section class="seat-map-section">
+        <div class="seat-map-area">
+          <div class="stage">STAGE</div>
+
+          <div class="seat-zone zone-a">
+            <div class="zone-title">A</div>
+            <div class="seat-grid" id="zoneA"></div>
+          </div>
+
+          <div class="seat-zone zone-b">
+            <div class="zone-title">B</div>
+            <div class="seat-grid" id="zoneB"></div>
+          </div>
+
+          <div class="seat-zone zone-c">
+            <div class="zone-title">C</div>
+            <div class="seat-grid wide" id="zoneC"></div>
+          </div>
+
+          <div class="legend-box">
+            <div><span class="legend available"></span>선택 가능</div>
+            <div><span class="legend selected"></span>선택 좌석</div>
+            <div><span class="legend reserved"></span>선택 불가</div>
+          </div>
+        </div>
+      </section>
+
+      <aside class="seat-side-panel">
+        <h2>선택 좌석</h2>
+
+        <div class="selected-seat-list" id="selectedSeatList">
+          <p class="empty-text">선택한 좌석이 없습니다.</p>
+        </div>
+
+        <div class="price-summary">
+          <div class="summary-row">
+            <span>선택 수량</span>
+            <strong id="selectedCount">0</strong>
+          </div>
+          <div class="summary-row">
+            <span>총 금액</span>
+            <strong id="totalPrice">0원</strong>
+          </div>
+        </div>
+
+        <button class="complete-btn" id="completeBtn" disabled>
+          선택 완료
+        </button>
+      </aside>
+    </main>
+  </div>
+
+  <div class="booking-modal" id="bookingModal" hidden>
+    <div class="booking-modal__backdrop" id="bookingModalBackdrop"></div>
+    <div class="booking-modal__panel" role="dialog" aria-modal="true" aria-labelledby="bookingModalTitle">
+      <p class="booking-modal__eyebrow">결제 대기</p>
+      <h2 id="bookingModalTitle">선점 시간을 확인해주세요</h2>
+      <p class="booking-modal__desc">남은 시간 안에 예약 완료를 누르지 않으면 선점이 자동으로 해제됩니다.</p>
+
+      <div class="booking-modal__timer">
+        <span>남은 시간</span>
+        <strong id="holdTimer">05:00</strong>
+      </div>
+
+      <div class="booking-modal__seats" id="modalSeatList"></div>
+
+      <div class="booking-modal__actions">
+        <button type="button" class="booking-modal__button booking-modal__button--ghost" id="closeBookingModalBtn">
+          계속 좌석 보기
+        </button>
+        <button type="button" class="booking-modal__button booking-modal__button--primary" id="confirmBookingBtn">
+          예약 완료
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script th:inline="javascript">
+    const scheduleNo = [[${scheduleNo}]];
+  </script>
+  <script th:src="@{/js/seat/select.js}"></script>
+</body>
+</html>
