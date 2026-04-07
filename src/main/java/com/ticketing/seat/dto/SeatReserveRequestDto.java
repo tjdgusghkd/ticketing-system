@@ -8,5 +8,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 public class SeatReserveRequestDto {
+	private Long scheduleNo;
+	private String loginId; 
     private List<Long> seatIds;
 }

@@ -1,14 +1,22 @@
 const MAX_SELECT_COUNT = 4;
-const SEAT_PRICE = 99000;
 
 let seatData = [];
 let selectedSeats = [];
+let holdTimerInterval = null;
+let holdDeadline = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
   await loadSeats();
 
   const completeBtn = document.querySelector('#completeBtn');
-  completeBtn.addEventListener('click', reserveSeats);
+  const confirmBookingBtn = document.querySelector('#confirmBookingBtn');
+  const closeBookingModalBtn = document.querySelector('#closeBookingModalBtn');
+  const bookingModalBackdrop = document.querySelector('#bookingModalBackdrop');
+
+  completeBtn.addEventListener('click', openBookingModal);
+  confirmBookingBtn.addEventListener('click', reserveSeats);
+  closeBookingModalBtn.addEventListener('click', closeBookingModal);
+  bookingModalBackdrop.addEventListener('click', closeBookingModal);
 });
 
 async function loadSeats() {
@@ -48,6 +56,33 @@ async function loadSeats() {
 
 function syncSelectedSeats() {
   selectedSeats = seatData.filter(seat => seat.holdByMe);
+  syncHoldDeadline();
+}
+
+function syncHoldDeadline() {
+  if (selectedSeats.length === 0) {
+    holdDeadline = null;
+    stopHoldTimer();
+    updateHoldTimerText(0);
+    return;
+  }
+
+  const expiresInValues = selectedSeats
+    .map(seat => seat.holdExpiresInSeconds)
+    .filter(value => typeof value === 'number' && value > 0);
+
+  if (expiresInValues.length === 0) {
+    holdDeadline = null;
+    stopHoldTimer();
+    updateHoldTimerText(0);
+    return;
+  }
+
+  holdDeadline = Date.now() + Math.min(...expiresInValues) * 1000;
+
+  if (!document.querySelector('#bookingModal').hidden) {
+    startHoldTimer();
+  }
 }
 
 function renderSeats() {
@@ -63,10 +98,7 @@ function renderSeats() {
     button.dataset.seatLabel = `${seat.section}-${seat.rowNum}-${seat.seatNumber}`;
     button.title = `${seat.section}-${seat.rowNum}-${seat.seatNumber}`;
 
-    if (seat.booked) {
-      button.classList.add('reserved');
-      button.disabled = true;
-    } else if (seat.held && !seat.holdByMe) {
+    if (seat.booked || (seat.held && !seat.holdByMe)) {
       button.classList.add('reserved');
       button.disabled = true;
     } else {
@@ -80,8 +112,9 @@ function renderSeats() {
     }
 
     const targetZone = document.querySelector(
-      seat.section === 'A' ? '#zoneA' :
-      seat.section === 'B' ? '#zoneB' : '#zoneC'
+      seat.section === 'A' ? '#zoneA'
+        : seat.section === 'B' ? '#zoneB'
+          : '#zoneC'
     );
 
     targetZone.appendChild(button);
@@ -122,11 +155,12 @@ async function holdSeat(seat) {
       return;
     }
 
-	if (response.status === 409) {
-	    const message = await response.text();
-	    alert(message);
-	    return;
-	  }
+    if (response.status === 409) {
+      const message = await response.text();
+      alert(message);
+      await loadSeats();
+      return;
+    }
 
     if (!response.ok) {
       throw new Error('좌석 선점 실패');
@@ -143,15 +177,12 @@ async function unholdSeat(seat) {
   const accessToken = localStorage.getItem('accessToken');
 
   try {
-    const response = await fetch(
-      `/api/rounds/${scheduleNo}/hold/${seat.scheduleSeatNo}`,
-      {
-        method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${accessToken}`
-        }
+    const response = await fetch(`/api/rounds/${scheduleNo}/hold/${seat.scheduleSeatNo}`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${accessToken}`
       }
-    );
+    });
 
     if (response.status === 401 || response.status === 403) {
       handleAuthFail();
@@ -188,15 +219,90 @@ function renderSelectedSeatPanel() {
     .map(seat => `
       <div class="selected-seat-item">
         <span>${seat.section}-${seat.rowNum}-${seat.seatNumber}</span>
-        <strong>${SEAT_PRICE.toLocaleString()}원</strong>
+        <strong>${seat.price.toLocaleString()}원</strong>
       </div>
     `)
     .join('');
 
   countEl.innerText = String(selectedSeats.length);
-  priceEl.innerText = `${(selectedSeats.length * SEAT_PRICE).toLocaleString()}원`;
+  priceEl.innerText = `${selectedSeats
+    .reduce((total, seat) => total + seat.price, 0)
+    .toLocaleString()}원`;
   completeBtn.disabled = false;
   completeBtn.classList.add('active');
+}
+
+function renderModalSeatList() {
+  const modalSeatList = document.querySelector('#modalSeatList');
+
+  if (selectedSeats.length === 0) {
+    modalSeatList.innerHTML = '<p class="empty-text">선택한 좌석이 없습니다.</p>';
+    return;
+  }
+
+  modalSeatList.innerHTML = selectedSeats
+    .map(seat => `
+      <div class="selected-seat-item">
+        <span>${seat.section}-${seat.rowNum}-${seat.seatNumber}</span>
+        <strong>${seat.price.toLocaleString()}원</strong>
+      </div>
+    `)
+    .join('');
+}
+
+function openBookingModal() {
+  if (selectedSeats.length === 0) {
+    return;
+  }
+
+  renderModalSeatList();
+  document.querySelector('#bookingModal').hidden = false;
+  startHoldTimer();
+}
+
+function closeBookingModal() {
+  document.querySelector('#bookingModal').hidden = true;
+  stopHoldTimer();
+}
+
+function startHoldTimer() {
+  stopHoldTimer();
+  updateHoldTimer();
+  holdTimerInterval = window.setInterval(updateHoldTimer, 1000);
+}
+
+function stopHoldTimer() {
+  if (holdTimerInterval !== null) {
+    window.clearInterval(holdTimerInterval);
+    holdTimerInterval = null;
+  }
+}
+
+function updateHoldTimer() {
+  if (!holdDeadline) {
+    updateHoldTimerText(0);
+    return;
+  }
+
+  const remainingSeconds = Math.max(0, Math.floor((holdDeadline - Date.now()) / 1000));
+  updateHoldTimerText(remainingSeconds);
+
+  if (remainingSeconds <= 0) {
+    handleHoldExpired();
+  }
+}
+
+function updateHoldTimerText(totalSeconds) {
+  const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
+  const seconds = String(totalSeconds % 60).padStart(2, '0');
+  document.querySelector('#holdTimer').innerText = `${minutes}:${seconds}`;
+}
+
+async function handleHoldExpired() {
+  stopHoldTimer();
+  closeBookingModal();
+  alert('선점 시간이 만료되어 좌석이 자동 해제되었습니다.');
+  await loadSeats();
 }
 
 async function reserveSeats() {
@@ -224,20 +330,22 @@ async function reserveSeats() {
     }
 
     if (response.status === 409) {
-      alert('선택한 좌석 중 이미 예약되었거나 선점이 만료된 좌석이 있습니다.');
+      const message = await response.text();
+      alert(message);
       await loadSeats();
       return;
     }
 
     if (!response.ok) {
-      throw new Error('예매 실패');
+      throw new Error('예약 실패');
     }
 
-    alert('예매가 완료되었습니다.');
-    location.href = '/mypage';
+    closeBookingModal();
+    alert('예약이 완료되었습니다.');
+    location.href = '/';
   } catch (error) {
     console.error(error);
-    alert('예매 처리 중 오류가 발생했습니다.');
+    alert('예약 처리 중 오류가 발생했습니다.');
   }
 }
 

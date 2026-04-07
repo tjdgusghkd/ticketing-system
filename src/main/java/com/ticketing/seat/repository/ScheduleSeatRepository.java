@@ -5,11 +5,13 @@ import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.ticketing.seat.entity.ScheduleSeat;
+import com.ticketing.seat.enums.ScheduleSeatStatus;
 
 import jakarta.persistence.LockModeType;
 
@@ -36,4 +38,17 @@ public interface ScheduleSeatRepository extends JpaRepository<ScheduleSeat, Long
         @Param("scheduleNo") Long scheduleNo,
         @Param("scheduleSeatNo") Long scheduleSeatNo
     );
+
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE ScheduleSeat s SET s.status = 'BOOKED' " +
+    		"WHERE s.scheduleSeatNo IN :seatIds AND s.schedule.scheduleNo = :scheduleNo")
+	int updateStatusToBooked(@Param("scheduleNo") Long scheduleNo, @Param("seatIds") List<Long> seatIds);
+    
+ // ReservationRepository.java
+    @Query("SELECT COUNT(r) FROM Reservation r " +
+           "WHERE r.member.loginId = :loginId " +
+           "AND r.schedule.scheduleNo = :scheduleNo " +
+           "AND r.reservationStatus = 'RESERVED'")
+    int countByMemberAndSchedule(@Param("loginId") String loginId, @Param("scheduleNo") Long scheduleNo);
+    
 }

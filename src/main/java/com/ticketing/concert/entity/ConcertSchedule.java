@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.ticketing.concert.enums.ScheduleStatus;
+import com.ticketing.reservation.entity.Reservation;
 import com.ticketing.seat.entity.ScheduleSeat;
 
 import jakarta.persistence.Column;
@@ -55,7 +56,9 @@ public class ConcertSchedule {
 
     @OneToMany(mappedBy = "schedule")
     private List<ScheduleSeat> scheduleSeats = new ArrayList<>();
-
+    
+    @OneToMany(mappedBy="schedule")
+    private List<Reservation> reservations = new ArrayList<>();
     @Builder
     public ConcertSchedule(LocalDateTime startTime, LocalDateTime endTime,
                             Concert concert) {
@@ -92,5 +95,18 @@ public class ConcertSchedule {
     	if(scheduleSeat.getSchedule() != this) {
     		scheduleSeat.assignSchedule(this);
     	}
+    }
+    
+    public void addReservation(Reservation reservation) {
+        if (reservation == null) return;
+        
+        if (!this.reservations.contains(reservation)) {
+            this.reservations.add(reservation);
+        }
+        
+        // 무한 루프 방지: 상대방 엔티티의 참조도 업데이트
+        if (reservation.getSchedule() != this) {
+            reservation.assignSchedule(this);
+        }
     }
 }

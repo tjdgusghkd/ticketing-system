@@ -85,7 +85,7 @@ body {
 
 .seat-zone {
   position: absolute;
-  background: rgba(255,255,255,0.72);
+  background: rgba(255, 255, 255, 0.72);
   border-radius: 12px;
   padding: 18px;
 }
@@ -162,7 +162,7 @@ body {
   gap: 16px;
   font-size: 13px;
   color: #444;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
 }
 
 .legend {
@@ -256,6 +256,103 @@ body {
   cursor: pointer;
 }
 
+.booking-modal[hidden] {
+  display: none;
+}
+
+.booking-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+}
+
+.booking-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.58);
+}
+
+.booking-modal__panel {
+  position: relative;
+  width: min(460px, calc(100vw - 32px));
+  margin: 80px auto 0;
+  padding: 28px 24px 24px;
+  border-radius: 24px;
+  background: #ffffff;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.22);
+}
+
+.booking-modal__eyebrow {
+  margin-bottom: 8px;
+  color: #6b6ff6;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.booking-modal__panel h2 {
+  margin-bottom: 10px;
+  font-size: 28px;
+  font-weight: 800;
+}
+
+.booking-modal__desc {
+  color: #667085;
+  line-height: 1.6;
+  margin-bottom: 18px;
+}
+
+.booking-modal__timer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f5f7ff;
+  border: 1px solid #dbe1ff;
+  border-radius: 16px;
+  padding: 16px 18px;
+  margin-bottom: 16px;
+}
+
+.booking-modal__timer span {
+  color: #475467;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.booking-modal__timer strong {
+  color: #3448ff;
+  font-size: 28px;
+  font-weight: 800;
+}
+
+.booking-modal__seats {
+  max-height: 220px;
+  overflow-y: auto;
+  margin-bottom: 20px;
+}
+
+.booking-modal__actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.booking-modal__button {
+  height: 52px;
+  border-radius: 14px;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.booking-modal__button--ghost {
+  background: #eef2ff;
+  color: #445;
+}
+
+.booking-modal__button--primary {
+  background: #6b6ff6;
+  color: #fff;
+}
+
 @media (max-width: 1200px) {
   .seat-layout-wrap {
     grid-template-columns: 1fr;
@@ -264,5 +361,9 @@ body {
   .seat-side-panel {
     border-left: none;
     border-top: 1px solid #e2e5ec;
+  }
+
+  .booking-modal__actions {
+    grid-template-columns: 1fr;
   }
 }

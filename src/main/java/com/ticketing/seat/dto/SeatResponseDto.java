@@ -15,4 +15,5 @@ public class SeatResponseDto {
     private boolean booked;
     private boolean held;
     private boolean holdByMe;
+    private Long holdExpiresInSeconds;
 }
