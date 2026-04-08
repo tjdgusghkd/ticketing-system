@@ -342,7 +342,7 @@ async function reserveSeats() {
 
     closeBookingModal();
     alert('예약이 완료되었습니다.');
-    location.href = '/';
+    location.href = '/members/me/reservations';
   } catch (error) {
     console.error(error);
     alert('예약 처리 중 오류가 발생했습니다.');

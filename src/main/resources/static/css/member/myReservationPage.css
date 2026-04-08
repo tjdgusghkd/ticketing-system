@@ -1,0 +1,278 @@
+.mypage-main {
+  padding-top: 18px;
+  padding-bottom: 24px;
+}
+
+.mypage-hero {
+  background: #12131d;
+  border-radius: 20px;
+  padding: 28px 24px 22px;
+  margin-bottom: 20px;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+}
+
+.section-title-wrap {
+  margin-bottom: 0;
+}
+
+.section-title-wrap h1 {
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  margin-bottom: 8px;
+}
+
+.section-title-wrap p {
+  color: #a7a7b6;
+  font-size: 14px;
+}
+
+.mypage-summary-section {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.summary-card {
+  background: #12131d;
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+}
+
+.summary-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.summary-header h2 {
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.summary-badge {
+  display: inline-block;
+  padding: 5px 10px;
+  border-radius: 10px;
+  background: rgba(211, 140, 255, 0.16);
+  color: #d38cff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.profile-info {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  background: #171822;
+  border-radius: 14px;
+  padding: 14px 16px;
+}
+
+.info-row .label,
+.reserve-summary-item .label {
+  color: #aeb1bf;
+  font-size: 14px;
+}
+
+.info-row strong,
+.reserve-summary-item strong {
+  color: #f4f4f8;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.reserve-summary-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.reserve-summary-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #171822;
+  border-radius: 14px;
+  padding: 16px;
+}
+
+.reservation-list-section {
+  margin-bottom: 0;
+}
+
+.list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.list-header h2 {
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.result-count {
+  color: #a7a7b6;
+  font-size: 14px;
+}
+
+.reservation-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.reservation-item {
+  background: #12131d;
+  border-radius: 20px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+}
+
+.reservation-main {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.reservation-thumb {
+  width: 82px;
+  height: 82px;
+  border-radius: 16px;
+  flex-shrink: 0;
+  overflow: hidden;
+  background: #171822;
+}
+
+.reservation-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.reservation-info {
+  flex: 1;
+}
+
+.reservation-badge {
+  display: inline-block;
+  margin-bottom: 8px;
+  padding: 5px 10px;
+  border-radius: 10px;
+  background: rgba(0, 232, 255, 0.14);
+  color: #00e8ff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.reservation-badge.canceled {
+  background: rgba(255, 107, 129, 0.14);
+  color: #ff6b81;
+}
+
+.reservation-info h3 {
+  font-size: 22px;
+  margin-bottom: 8px;
+}
+
+.reservation-place,
+.reservation-date,
+.reservation-seat {
+  color: #aeb1bf;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.reservation-action {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.price-info {
+  color: #00e8ff;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.detail-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 20px;
+  border-radius: 12px;
+  background: #d38cff;
+  color: #171321;
+  font-weight: 700;
+}
+
+.empty-box {
+  text-align: center;
+  padding: 50px;
+  color: #ccc;
+  background: #12131d;
+  border-radius: 20px;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+}
+
+.footer {
+  margin-top: 24px;
+}
+
+@media (max-width: 768px) {
+  .mypage-main {
+    padding-left: 18px;
+    padding-right: 18px;
+    padding-bottom: 18px;
+  }
+
+  .mypage-summary-section {
+    grid-template-columns: 1fr;
+  }
+
+  .section-title-wrap h1 {
+    font-size: 28px;
+  }
+
+  .reservation-main {
+    align-items: flex-start;
+  }
+
+  .reservation-thumb {
+    width: 72px;
+    height: 72px;
+  }
+
+  .reservation-info h3 {
+    font-size: 19px;
+  }
+
+  .list-header h2 {
+    font-size: 22px;
+  }
+
+  .info-row,
+  .reserve-summary-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

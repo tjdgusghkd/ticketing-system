@@ -52,4 +52,9 @@ public class MemberController {
     	memberService.signup(dto);
     	return "redirect:/";
     }
+    
+    @GetMapping("/me/reservations")
+    public String reservationPage() {
+    	return "member/myReservationPage";
+    }
 }

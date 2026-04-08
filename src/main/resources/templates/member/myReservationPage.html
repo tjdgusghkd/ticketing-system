@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>예매내역 - 티켓랩</title>
+
+  <link rel="stylesheet" th:href="@{/css/common/reset.css}" />
+  <link rel="stylesheet" th:href="@{/css/common/layout.css}" />
+  <link rel="stylesheet" th:href="@{/css/common/header.css}" />
+  <link rel="stylesheet" th:href="@{/css/common/footer.css}" />
+  <link rel="stylesheet" th:href="@{/css/member/myReservationPage.css}" />
+</head>
+<body>
+  <div class="page">
+    <div th:replace="~{common/header :: header}"></div>
+
+    <main class="main mypage-main">
+      <section class="mypage-hero">
+        <div class="section-title-wrap">
+          <h1>MY RESERVATIONS</h1>
+          <p>내 예매 내역을 확인할 수 있습니다.</p>
+        </div>
+      </section>
+
+      <section class="reservation-list-section">
+		  <div class="list-header">
+		    <h2>예매 내역</h2>
+		    <span class="result-count" id="resultCount">총 0건</span>
+		  </div>
+		
+		  <div class="reservation-list" id="reservationList"></div>
+		
+		  <div class="empty-box" id="emptyBox" style="display: none;">
+		    아직 예매 내역이 없습니다.
+		  </div>
+		</section>
+    </main>
+
+    <div th:replace="~{common/footer :: footer}"></div>
+  </div>
+
+  <script th:src="@{/js/member/myReservationPage.js}"></script>
+</body>
+</html>
