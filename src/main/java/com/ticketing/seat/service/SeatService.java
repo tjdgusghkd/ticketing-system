@@ -3,6 +3,7 @@ package com.ticketing.seat.service;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -51,7 +52,7 @@ public class SeatService {
 
         return seats.stream()
                 .map(scheduleSeat -> {
-                    String key = holdKey(scheduleSeat.getScheduleSeatNo());
+                    String key = holdKey(scheduleNo,scheduleSeat.getScheduleSeatNo());
                     String holder = stringRedisTemplate.opsForValue().get(key);
                     Long holdExpiresInSeconds = holder != null
                             ? stringRedisTemplate.getExpire(key, TimeUnit.SECONDS)
@@ -95,7 +96,7 @@ public class SeatService {
             throw new IllegalArgumentException("선택한 좌석이 없습니다.");
         }
         
-        List<String> keys = seatIds.stream().map(this::holdKey).toList();
+        List<String> keys = seatIds.stream().map(seatId -> holdKey(scheduleNo, seatId)).toList();
         List<String> holders = stringRedisTemplate.opsForValue().multiGet(keys);
 
         for(String holder : holders) {
@@ -136,12 +137,28 @@ public class SeatService {
         ScheduleSeat scheduleSeat = scheduleSeatRepository
                 .findByScheduleNoAndScheduleSeatNoForUpdate(scheduleNo, scheduleSeatNo)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 좌석입니다."));
-
+        List<Reservation> reservationList = reservationRepository.findByMember_LoginIdAndSchedule_ScheduleNo(loginId,scheduleNo);
+        int dbCount = reservationList.size();
+        
+        
         if (scheduleSeat.getStatus() == ScheduleSeatStatus.BOOKED) {
             throw new IllegalStateException("이미 예약된 좌석입니다.");
         }
+        
+        Set<String> keys = stringRedisTemplate.keys("seat:hold:" + scheduleNo + ":*"); 
+        long holdCount = 0;
+        if (keys != null) {
+            holdCount = keys.stream()
+                .map(k -> stringRedisTemplate.opsForValue().get(k))
+                .filter(v -> v != null && v.equals(loginId))
+                .count();
+        }
+        
+        if(holdCount + dbCount + 1 > 4) {
+        	throw new IllegalStateException("1인당 최대 4자리까지 예매 가능합니다.");
+        }
 
-        String key = holdKey(scheduleSeatNo);
+        String key = holdKey(scheduleNo, scheduleSeatNo);
         String holder = stringRedisTemplate.opsForValue().get(key);
 
         if (holder != null && !holder.equals(loginId)) {
@@ -157,7 +174,7 @@ public class SeatService {
                 .findByScheduleNoAndScheduleSeatNoForUpdate(scheduleNo, scheduleSeatNo)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 좌석입니다."));
 
-        String key = holdKey(scheduleSeat.getScheduleSeatNo());
+        String key = holdKey(scheduleSeat.getSchedule().getScheduleNo(), scheduleSeat.getScheduleSeatNo());
         String holder = stringRedisTemplate.opsForValue().get(key);
 
         if (holder == null) {
@@ -175,7 +192,7 @@ public class SeatService {
         return dateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
     }
 
-    private String holdKey(Long scheduleSeatNo) {
-        return "seat:hold:" + scheduleSeatNo;
+    private String holdKey(Long scheduleNo, Long scheduleSeatNo) {
+        return "seat:hold:" + scheduleNo + ":" + scheduleSeatNo;
     }
 }

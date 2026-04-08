@@ -49,13 +49,16 @@ public class SecurityConfig {
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
-                                "/", "/members/**", "/api/auth/login", "/api/auth/reissue",
-                                "/css/**", "/js/**", "/image/**","/concerts/{concertNo}",
-                                "/rounds/{scheduleNo}/seats"
-                        ).permitAll()
-                        .anyRequest().authenticated()
-                )
+                	      .requestMatchers(
+                	          "/api/auth/logout",
+                	          "/api/rounds/*/seats",
+                	          "/api/rounds/*/hold/*",
+                	          "/api/rounds/*/reserve",
+                	          "/api/auth/members/me/**",
+                	          "/api/admin/**"
+                	      ).authenticated()
+                	      .anyRequest().permitAll()
+                	  )
                 .userDetailsService(customUserDetailsService)
                 .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
 

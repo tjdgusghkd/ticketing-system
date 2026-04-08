@@ -19,6 +19,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -56,7 +57,12 @@ public class Reservation {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "SCHEDULE_NO", nullable = false) // 추가: 회차 정보를 직접 참조
     private ConcertSchedule schedule;
-
+    
+    @Transient // DB 컬럼으로 생성되지 않음
+    public long getPrice() {
+        return this.scheduleSeat != null ? this.scheduleSeat.getPrice() : 0L;
+    }
+    
     @Builder
     public Reservation(ReservationStatus reservationStatus, LocalDateTime reservedAt,
                        LocalDateTime canceledAt, Member member, ConcertSchedule schedule, ScheduleSeat scheduleSeat) {
