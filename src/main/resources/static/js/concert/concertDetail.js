@@ -24,5 +24,6 @@ function goReserve() {
     return;
   }
 
-  location.href = `/rounds/${selectedScheduleNo}/seats`;
+  // location.href = `/rounds/${selectedScheduleNo}/seats`;
+  location.href = '/queue/queue';
 }
