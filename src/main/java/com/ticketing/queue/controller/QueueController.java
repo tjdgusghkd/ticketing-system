@@ -1,4 +1,4 @@
-package com.ticketing.queue.contoller;
+package com.ticketing.queue.controller;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
