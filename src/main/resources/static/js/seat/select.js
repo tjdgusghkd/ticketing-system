@@ -4,8 +4,10 @@ let seatData = [];
 let selectedSeats = [];
 let holdTimerInterval = null;
 let holdDeadline = null;
+let queueLeaveSent = false;
 
 document.addEventListener('DOMContentLoaded', async () => {
+  console.log('select.js loaded');
   await loadSeats();
 
   const completeBtn = document.querySelector('#completeBtn');
@@ -17,6 +19,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   confirmBookingBtn.addEventListener('click', reserveSeats);
   closeBookingModalBtn.addEventListener('click', closeBookingModal);
   bookingModalBackdrop.addEventListener('click', closeBookingModal);
+});
+
+window.addEventListener('pagehide', () => {
+  leaveQueueOnExit();
+});
+
+window.addEventListener('beforeunload', () => {
+  leaveQueueOnExit();
 });
 
 async function loadSeats() {
@@ -35,8 +45,15 @@ async function loadSeats() {
       }
     });
 
-    if (response.status === 401 || response.status === 403) {
+    console.log('seats response status =', response.status);
+
+    if (response.status === 401) {
       handleAuthFail();
+      return;
+    }
+
+    if (response.status === 403) {
+      handleQueueBlocked();
       return;
     }
 
@@ -150,8 +167,13 @@ async function holdSeat(seat) {
       }
     });
 
-    if (response.status === 401 || response.status === 403) {
+    if (response.status === 401) {
       handleAuthFail();
+      return;
+    }
+
+    if (response.status === 403) {
+      handleQueueBlocked();
       return;
     }
 
@@ -184,8 +206,13 @@ async function unholdSeat(seat) {
       }
     });
 
-    if (response.status === 401 || response.status === 403) {
+    if (response.status === 401) {
       handleAuthFail();
+      return;
+    }
+
+    if (response.status === 403) {
+      handleQueueBlocked();
       return;
     }
 
@@ -324,8 +351,13 @@ async function reserveSeats() {
       })
     });
 
-    if (response.status === 401 || response.status === 403) {
+    if (response.status === 401) {
       handleAuthFail();
+      return;
+    }
+
+    if (response.status === 403) {
+      handleQueueBlocked();
       return;
     }
 
@@ -354,4 +386,33 @@ function handleAuthFail() {
   localStorage.removeItem('accessToken');
   localStorage.removeItem('refreshToken');
   location.href = '/members/signin';
+}
+
+function handleQueueBlocked() {
+  console.log('handleQueueBlocked called');
+  alert('현재 좌석 페이지 입장 권한이 없습니다. 대기열로 이동합니다.');
+  location.href = `/queue/queue/${scheduleNo}`;
+}
+
+async function leaveQueueOnExit() {
+  if (queueLeaveSent) {
+    return;
+  }
+
+  const accessToken = localStorage.getItem('accessToken');
+  if (!accessToken || !scheduleNo) {
+    return;
+  }
+
+  queueLeaveSent = true;
+
+  await fetch(`/api/queue/${scheduleNo}/leave`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`
+    },
+    keepalive: true
+  }).catch(() => {
+    queueLeaveSent = false;
+  });
 }

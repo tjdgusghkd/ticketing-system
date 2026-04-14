@@ -1,6 +1,4 @@
 let selectedScheduleNo = null;
-let max_capacity = 3;
-
 
 function selectSchedule(scheduleNo, element) {
     selectedScheduleNo = scheduleNo;
@@ -25,6 +23,7 @@ async function goReserve() {
         alert('회차를 선택해주세요.');
         return;
     }
+
     const accessToken = localStorage.getItem('accessToken');
 
     if (!accessToken) {
@@ -34,12 +33,16 @@ async function goReserve() {
 
     try {
         const response = await fetch(`/api/queue/${selectedScheduleNo}/enter`, {
-            method: 'POST', 
+            method: 'POST',
             headers: {
-                'Authorization': `Bearer ${accessToken}`, 
-                'Content-Type': 'application/json'
+                Authorization: `Bearer ${accessToken}`
             }
         });
+
+        if (response.status === 401 || response.status === 403) {
+            handleAuthFail();
+            return;
+        }
 
         if (!response.ok) {
             throw new Error('대기열 진입 실패');
@@ -48,14 +51,13 @@ async function goReserve() {
         const data = await response.json();
 
         if (data.allowed) {
-            // 즉시 입장 가능 시
-            location.href = `/rounds/${selectedScheduleNo}/seats`;
-        } else {
-            location.href = `/queue/waiting?scheduleNo=${selectedScheduleNo}`;
+            location.replace(`/rounds/${selectedScheduleNo}/seats`);
+            return;
         }
 
+        location.href = `/queue/queue/${selectedScheduleNo}`;
     } catch (error) {
-        console.error('Queue Error:', error);
+        console.error(error);
         alert('대기열 시스템 통신 중 오류가 발생했습니다.');
     }
 }

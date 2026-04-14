@@ -21,24 +21,24 @@
           보다 안정적인 예매 진행을 위해 순차적으로 입장 중입니다.
         </p>
       </div>
-
-      <div class="queue-card">
+		<input type="hidden" id="scheduleNo" th:value="${scheduleNo}">
+      <div class="queue-card" hidden>
         <div class="queue-status-badge">WAITING</div>
 
         <div class="queue-info-box">
           <p class="queue-label">내 대기 순번</p>
-          <p class="queue-number">1,284</p>
+          <p class="queue-number" id="queueRank">1,284</p>
         </div>
 
         <div class="queue-info-grid">
           <div class="queue-info-item">
             <p class="info-title">예상 대기 시간</p>
-            <p class="info-value">약 4분</p>
+            <p class="info-value" id="estimatedWait">약 4분</p>
           </div>
 
           <div class="queue-info-item">
             <p class="info-title">현재 상태</p>
-            <p class="info-value status-text">입장 대기 중</p>
+            <p class="info-value status-text" id="queueStatus">입장 대기 중</p>
           </div>
         </div>
 
