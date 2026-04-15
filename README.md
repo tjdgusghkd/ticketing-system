@@ -1,6 +1,15 @@
 # Ticketing System 
 >동일 좌석에 대한 동시 접근 상황에서 발생하는 **중복 예매 문제를 해결하는 티켓팅 시스템**
 
+  [![Java](https://img.shields.io/badge/Java-21-007396?logo=openjdk&logoColor=white)](#)
+  [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.11-6DB33F?logo=springboot&logoColor=white)](#)
+  [![Spring Security](https://img.shields.io/badge/Spring%20Security-JWT-6DB33F?logo=springsecurity&logoColor=white)](#)
+  [![JPA](https://img.shields.io/badge/JPA-Hibernate-59666C?logo=hibernate&logoColor=white)](#)
+  [![Thymeleaf](https://img.shields.io/badge/Thymeleaf-SSR-005F0F?logo=thymeleaf&logoColor=white)](#)
+  [![MySQL](https://img.shields.io/badge/MySQL-8.0-4479A1?logo=mysql&logoColor=white)](#)
+  [![Redis](https://img.shields.io/badge/Redis-Cache-DC382D?logo=redis&logoColor=white)](#)
+  [![Gradle](https://img.shields.io/badge/Gradle-Build-02303A?logo=gradle&logoColor=white)](#)
+
 콘서트 예매 상황을 가정하여,  
 사용자가 공연과 회차를 조회하고 좌석을 선택하여 예매할 수 있는 **티켓팅 시스템**입니다.
 
