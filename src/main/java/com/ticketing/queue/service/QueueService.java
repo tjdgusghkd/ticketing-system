@@ -9,6 +9,7 @@ import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
 
 import com.ticketing.queue.dto.QueueEnterResponseDto;
+import com.ticketing.seat.service.SeatService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -19,7 +20,7 @@ public class QueueService {
 	private static final int MAX_CAPACITY = 1;
 
 	private final StringRedisTemplate stringRedisTemplate;
-
+	
 	public QueueEnterResponseDto enter(Long scheduleNo, String loginId) {
 		String activeKey = "active:round:" + scheduleNo;
 		String waitKey = "wait:round:" + scheduleNo;
@@ -30,7 +31,6 @@ public class QueueService {
 
 		List<?> result = stringRedisTemplate.execute(script, List.of(activeKey, waitKey), loginId,
 				String.valueOf(MAX_CAPACITY),
-
 				String.valueOf(System.currentTimeMillis()));
 
 		return toResponse(result, "대기열 진입 처리 실패");
@@ -45,7 +45,8 @@ public class QueueService {
 		script.setResultType(List.class);
 
 		List<?> result = stringRedisTemplate.execute(script, List.of(activeKey, waitKey), loginId,
-				String.valueOf(MAX_CAPACITY));
+				String.valueOf(MAX_CAPACITY),
+				String.valueOf(System.currentTimeMillis()));
 
 		return toResponse(result, "대기열 상태 조회 실패");
 	}
@@ -70,23 +71,31 @@ public class QueueService {
 	public void leave(Long scheduleNo, String loginId) {
 		String activeKey = "active:round:" + scheduleNo;
 		String waitKey = "wait:round:" + scheduleNo;
-
+		String userHoldKey = userHoldKey(scheduleNo, loginId);
+		
 		stringRedisTemplate.opsForSet().remove(activeKey, loginId);
 		stringRedisTemplate.opsForZSet().remove(waitKey, loginId);
 
-		Set<String> holdKeys = stringRedisTemplate.keys("seat:hold:" + scheduleNo + ":*");
-		if (holdKeys == null || holdKeys.isEmpty()) {
+		Set<String> heldSeatIds = stringRedisTemplate.opsForSet().members(userHoldKey);
+		if(heldSeatIds == null || heldSeatIds.isEmpty()) {
+			stringRedisTemplate.delete(userHoldKey);
 			return;
 		}
-
-		List<String> holdKeyList = holdKeys.stream().toList();
-		List<String> holders = stringRedisTemplate.opsForValue().multiGet(holdKeyList);
-
-		for (int i = 0; i < holdKeyList.size(); i++) {
-			String holder = holders.get(i);
-			if (loginId.equals(holder)) {
-				stringRedisTemplate.delete(holdKeyList.get(i));
-			}
-		}
+		
+		List<String> holdKeys = heldSeatIds.stream()
+							.map(seatId -> holdKey(scheduleNo, Long.valueOf(seatId)))
+							.toList();
+		
+		stringRedisTemplate.delete(holdKeys);
+		stringRedisTemplate.delete(userHoldKey);
+		
+	}
+	
+	private String holdKey(Long scheduleNo, Long scheduleSeatNo) {
+		return "seat:hold:" + scheduleNo + ":" + scheduleSeatNo;
+	}
+	
+	private String userHoldKey(Long scheduleNo, String loginId) {
+		return "user:hold:" + scheduleNo + ":" + loginId;
 	}
 }

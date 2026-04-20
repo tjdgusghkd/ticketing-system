@@ -411,7 +411,9 @@ async function leaveQueueOnExit() {
     headers: {
       Authorization: `Bearer ${accessToken}`
     },
-    keepalive: true
+    keepalive: true 
+	// keepalive: true는 보통 브라우저를 닫으면 실행중인 모든 네트워크 요청이 취소되지만
+	// 해당 옵션은 브라우저가 꺼져도 이 요청은 끝까지 서버에 전달해줘라고 운영체제에 부탁
   }).catch(() => {
     queueLeaveSent = false;
   });

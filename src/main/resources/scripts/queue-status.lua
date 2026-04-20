@@ -3,6 +3,7 @@
 
   local loginId = ARGV[1]
   local maxCapacity = tonumber(ARGV[2])
+  local now = tonumber(ARGV[3])
 
   if redis.call('SISMEMBER', activeKey, loginId) == 1 then
       return {1, 0}
@@ -10,7 +11,10 @@
 
   local rank = redis.call('ZRANK', waitKey, loginId)
   if not rank then
-      return {0, 1}
+      redis.call('ZADD', waitKey, now, loginId)
+	  local realRank = redis.call('ZRANK', waitKey, loginId)
+	  
+	  return {0, realRank + 1}
   end
 
   local activeCount = redis.call('SCARD', activeKey)

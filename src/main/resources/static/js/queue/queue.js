@@ -3,6 +3,7 @@ const progressText = document.getElementById('progressText');
 const queueCard = document.querySelector('.queue-card');
 
 let scheduleNo = null;
+let queueLeaveSent = false;
 let pollingId = null;
 
 function updateProgress(value) {
@@ -13,6 +14,14 @@ function updateProgress(value) {
 document.addEventListener('DOMContentLoaded', () => {
     scheduleNo = document.querySelector('#scheduleNo').value;
     enterQueue();
+	
+	window.addEventListener('pagehide', () => {
+	  leaveQueueOnExit();
+	});
+
+	window.addEventListener('beforeunload', () => {
+	  leaveQueueOnExit();
+	});
 });
 
 async function enterQueue() {
@@ -141,6 +150,32 @@ async function checkQueueStatus(scheduleNo) {
         console.error(error);
     }
 }
+
+async function leaveQueueOnExit() {
+  if (queueLeaveSent) {
+    return;
+  }
+
+  const accessToken = localStorage.getItem('accessToken');
+  if (!accessToken || !scheduleNo) {
+    return;
+  }
+
+  queueLeaveSent = true;
+
+  await fetch(`/api/queue/${scheduleNo}/leave`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`
+    },
+    keepalive: true 
+	// keepalive: true는 보통 브라우저를 닫으면 실행중인 모든 네트워크 요청이 취소되지만
+	// 해당 옵션은 브라우저가 꺼져도 이 요청은 끝까지 서버에 전달해줘라고 운영체제에 부탁
+  }).catch(() => {
+    queueLeaveSent = false;
+  });
+}
+
 
 function handleAuthFail() {
     alert('Login is required or your session has expired.');
