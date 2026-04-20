@@ -1,0 +1,249 @@
+@charset "UTF-8";
+
+body {
+  margin: 0;
+  font-family: "Pretendard", "Noto Sans KR", sans-serif;
+  background: #050816;
+  color: #ffffff;
+}
+
+.queue-page {
+  min-height: 100vh;
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 15% 10%, rgba(122, 69, 255, 0.14), transparent 28%),
+    radial-gradient(circle at 85% 80%, rgba(0, 255, 255, 0.10), transparent 24%),
+    linear-gradient(180deg, #070916 0%, #040510 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 20px;
+}
+
+.bg-orb {
+  position: absolute;
+  width: 320px;
+  height: 320px;
+  border-radius: 50%;
+  filter: blur(90px);
+  opacity: 0.45;
+  z-index: 0;
+}
+
+.bg-orb-left {
+  top: -60px;
+  left: -80px;
+  background: rgba(122, 69, 255, 0.45);
+}
+
+.bg-orb-right {
+  bottom: -80px;
+  right: -60px;
+  background: rgba(0, 255, 255, 0.28);
+}
+
+.queue-container {
+  width: 100%;
+  max-width: 720px;
+  position: relative;
+  z-index: 1;
+}
+
+.queue-logo-wrap {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.queue-brand {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #8f7cff;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+
+.queue-title {
+  font-size: 38px;
+  font-weight: 800;
+  line-height: 1.3;
+  margin-bottom: 12px;
+  color: #ffffff;
+}
+
+.queue-subtitle {
+  font-size: 16px;
+  color: #b9c0d4;
+  line-height: 1.6;
+}
+
+.queue-card {
+  background: rgba(10, 14, 30, 0.78);
+  border: 1px solid rgba(143, 124, 255, 0.22);
+  border-radius: 28px;
+  padding: 40px 32px;
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.45),
+    0 0 30px rgba(122, 69, 255, 0.10);
+  backdrop-filter: blur(16px);
+}
+
+.queue-status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 110px;
+  height: 38px;
+  padding: 0 16px;
+  border-radius: 999px;
+  background: rgba(122, 69, 255, 0.18);
+  border: 1px solid rgba(143, 124, 255, 0.35);
+  color: #c8bcff;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  margin-bottom: 28px;
+}
+
+.queue-info-box {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.queue-label {
+  font-size: 15px;
+  color: #9da6c2;
+  margin-bottom: 14px;
+}
+
+.queue-number {
+  font-size: 64px;
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1;
+  text-shadow: 0 0 18px rgba(143, 124, 255, 0.35);
+}
+
+.queue-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 30px;
+}
+
+.queue-info-item {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 18px;
+  padding: 18px 20px;
+}
+
+.info-title {
+  font-size: 14px;
+  color: #9da6c2;
+  margin-bottom: 10px;
+}
+
+.info-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.status-text {
+  color: #7cf7d4;
+}
+
+.progress-section {
+  margin-bottom: 28px;
+}
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  font-size: 14px;
+  color: #b8bfd3;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 14px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-fill {
+  width: 0;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #7a45ff 0%, #00e5ff 100%);
+  box-shadow: 0 0 16px rgba(122, 69, 255, 0.45);
+  transition: width 0.5s ease;
+}
+
+.spinner-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 28px;
+}
+
+.spinner {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  border: 4px solid rgba(255, 255, 255, 0.10);
+  border-top: 4px solid #8f7cff;
+  border-right: 4px solid #00e5ff;
+  animation: spin 1s linear infinite;
+  box-shadow: 0 0 20px rgba(143, 124, 255, 0.18);
+}
+
+.queue-message-box {
+  text-align: center;
+}
+
+.queue-message {
+  font-size: 16px;
+  color: #e9edff;
+  line-height: 1.7;
+  margin-bottom: 12px;
+}
+
+.queue-notice {
+  font-size: 13px;
+  color: #8b93aa;
+  line-height: 1.6;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 768px) {
+  .queue-title {
+    font-size: 30px;
+  }
+
+  .queue-number {
+    font-size: 48px;
+  }
+
+  .queue-card {
+    padding: 30px 20px;
+    border-radius: 22px;
+  }
+
+  .queue-info-grid {
+    grid-template-columns: 1fr;
+  }
+}

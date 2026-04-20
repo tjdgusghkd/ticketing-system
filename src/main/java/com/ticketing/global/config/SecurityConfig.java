@@ -55,7 +55,8 @@ public class SecurityConfig {
                 	          "/api/rounds/*/hold/*",
                 	          "/api/rounds/*/reserve",
                 	          "/api/auth/members/me/**",
-                	          "/api/admin/**"
+                	          "/api/admin/**",
+                	          "/api/queue/**"
                 	      ).authenticated()
                 	      .anyRequest().permitAll()
                 	  )
