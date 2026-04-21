@@ -9,7 +9,6 @@ import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
 
 import com.ticketing.queue.dto.QueueEnterResponseDto;
-import com.ticketing.seat.service.SeatService;
 
 import lombok.RequiredArgsConstructor;
 
