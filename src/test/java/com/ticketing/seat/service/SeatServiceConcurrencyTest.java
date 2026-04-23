@@ -17,6 +17,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.ticketing.global.exception.HoldExpiredException;
+import com.ticketing.global.exception.ReservationLimitExceededException;
 import com.ticketing.reservation.entity.Reservation;
 import com.ticketing.reservation.repository.ReservationRepository;
 import com.ticketing.seat.dto.SeatReserveRequestDto;
@@ -44,14 +46,33 @@ public class SeatServiceConcurrencyTest {
 	// 사용자 A, B가 동시에 holdSeat()
 	// 한 명만 성공해야함
 	// "seat:hold:" + scheduleNo + ":" + scheduleSeatNo;
-	@BeforeEach
-	void clearRedis() {
-		Set<String> keys =
-				stringRedisTemplate.keys("seat:hold:*");
-		if(keys != null && !keys.isEmpty()) {
-			stringRedisTemplate.delete(keys);
-		}
-	}
+	  @BeforeEach
+	  void clearRedis() {
+	      Set<String> seatHoldKeys = stringRedisTemplate.keys("seat:hold:*");
+	      if (seatHoldKeys != null && !seatHoldKeys.isEmpty()) {
+	          stringRedisTemplate.delete(seatHoldKeys);
+	      }
+
+	      Set<String> userHoldKeys = stringRedisTemplate.keys("user:hold:*");
+	      if (userHoldKeys != null && !userHoldKeys.isEmpty()) {
+	          stringRedisTemplate.delete(userHoldKeys);
+	      }
+
+	      Set<String> heartbeatKeys = stringRedisTemplate.keys("queue:hb:*");
+	      if (heartbeatKeys != null && !heartbeatKeys.isEmpty()) {
+	          stringRedisTemplate.delete(heartbeatKeys);
+	      }
+
+	      Set<String> activeKeys = stringRedisTemplate.keys("active:round:*");
+	      if (activeKeys != null && !activeKeys.isEmpty()) {
+	          stringRedisTemplate.delete(activeKeys);
+	      }
+
+	      Set<String> waitKeys = stringRedisTemplate.keys("wait:round:*");
+	      if (waitKeys != null && !waitKeys.isEmpty()) {
+	          stringRedisTemplate.delete(waitKeys);
+	      }
+	  }
 	@Test
 	void 같은_좌석을_동시에_hold하면_한명만_성공() throws Exception {
 		// 테스트 준비 (같은 회차, 같은 좌석, 다른 사용자 2명)
@@ -163,17 +184,23 @@ public class SeatServiceConcurrencyTest {
 		String holder = stringRedisTemplate.opsForValue().get("seat:hold:" + scheduleNo + ":" +scheduleSeatNo);
 		
 		assertThat(holder).isNull();
+		
+		String userHoldKey = "user:hold:" + scheduleNo + ":" + loginId;
+		Boolean exists = stringRedisTemplate.hasKey(userHoldKey);
+		
+		assertThat(Boolean.TRUE.equals(exists)).isFalse();
 	}
 	
 	@Test
 	void hold하지_않은_좌석은_reserve할_수_없다() {
 		Long scheduleNo = 2L;
 		Long scheduleSeatNo = 110L;
-		String loginId = "ghkd5370";
+		String loginId = "qwe2";
 		
 		SeatReserveRequestDto request = new SeatReserveRequestDto(scheduleNo, loginId, List.of(scheduleSeatNo));
 		
-		assertThatThrownBy(()-> seatService.reserve(scheduleNo, loginId, request)).isInstanceOf(IllegalStateException.class);
+		  assertThatThrownBy(() -> seatService.reserve(scheduleNo, loginId, request))
+	      .isInstanceOf(HoldExpiredException.class);
 	}
 	
 	@Test
@@ -183,6 +210,77 @@ public class SeatServiceConcurrencyTest {
 		
 		SeatReserveRequestDto request = new SeatReserveRequestDto(scheduleNo, loginId, List.of(171L, 172L, 173L, 174L, 175L));
 		
-		assertThatThrownBy(()-> seatService.reserve(scheduleNo,loginId, request)).isInstanceOf(IllegalArgumentException.class);
+		  assertThatThrownBy(() -> seatService.reserve(scheduleNo, loginId, request))
+	      .isInstanceOf(ReservationLimitExceededException.class);
+	}
+	
+	@Test 
+	void holdSeat_성공시_userHoldSeat에도_좌석이_추가된다() {
+		Long scheduleNo = 1L;
+		Long scheduleSeatNo = 1L;
+		String loginId = "qwe123";
+		
+		String seatHoldKey = "seat:hold:" + scheduleNo + ":" + scheduleSeatNo;
+		String userHoldKey = "user:hold:" + scheduleNo + ":" + loginId;
+		
+		seatService.holdSeat(scheduleNo, scheduleSeatNo, loginId);
+		
+		String holder = stringRedisTemplate.opsForValue().get(seatHoldKey);
+		Boolean userHoldContainsSeat = stringRedisTemplate
+									.opsForSet()
+									.isMember(userHoldKey, String.valueOf(scheduleSeatNo));
+		Boolean exists = stringRedisTemplate.hasKey(userHoldKey);
+		
+		assertThat(holder).isEqualTo(loginId);
+		assertThat(Boolean.TRUE.equals(userHoldContainsSeat)).isTrue();
+	}
+	
+	/**
+	 * 
+	 */
+	@Test
+	void unholdSeat_성공시_seatHold와_userHold가_함께_삭제된다() {
+		Long scheduleNo = 1L;
+		Long scheduleSeatNo = 2L;
+		String loginId = "tjdgus5370";
+		
+		String seatHoldKey = "seat:hold:" + scheduleNo + ":" + scheduleSeatNo;
+		String userHoldKey = "user:hold:" + scheduleNo + ":" + loginId;
+		
+		seatService.holdSeat(scheduleNo, scheduleSeatNo, loginId);
+		
+		seatService.unholdSeat(scheduleNo, scheduleSeatNo, loginId);
+		
+		String holder = stringRedisTemplate.opsForValue().get(seatHoldKey);
+		Boolean userHoldExists = stringRedisTemplate.hasKey(userHoldKey);
+		Boolean userContainsSeat = stringRedisTemplate.opsForSet().isMember(userHoldKey, String.valueOf(scheduleSeatNo));
+		
+		assertThat(holder).isNull();
+		assertThat(Boolean.TRUE.equals(userContainsSeat)).isFalse();
+		assertThat(Boolean.TRUE.equals(userHoldExists)).isFalse();
+	}
+	
+	@Test
+	void holdSeat_호출시_stale_userhold는_정리된다() {
+		Long scheduleNo = 1L;
+		Long staleSeatNo = 999L;
+		Long newSeatNo = 5L;
+		String loginId = "ghkd5370";
+		
+		String userHoldKey = "user:hold:" + scheduleNo + ":" + loginId;
+		
+		stringRedisTemplate.opsForSet().add(userHoldKey, String.valueOf(staleSeatNo));
+		seatService.holdSeat(scheduleNo, newSeatNo, loginId);
+
+		Boolean staleSeatExists = stringRedisTemplate.opsForSet().isMember(userHoldKey, String.valueOf(staleSeatNo));
+		
+		Boolean newSeatExists = stringRedisTemplate.opsForSet().isMember(userHoldKey, String.valueOf(newSeatNo));
+		
+		Long remainCount = stringRedisTemplate.opsForSet().size(userHoldKey);
+		
+		assertThat(Boolean.TRUE.equals(staleSeatExists)).isFalse();
+		assertThat(Boolean.TRUE.equals(newSeatExists)).isTrue();
+		assertThat(remainCount).isEqualTo(1L);
+		
 	}
 }
