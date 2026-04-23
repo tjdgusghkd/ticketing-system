@@ -1,6 +1,15 @@
 # Ticketing System 
 >동일 좌석에 대한 동시 접근 상황에서 발생하는 **중복 예매 문제를 해결하는 티켓팅 시스템**
 
+  [![Java](https://img.shields.io/badge/Java-21-007396?logo=openjdk&logoColor=white)](#)
+  [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.11-6DB33F?logo=springboot&logoColor=white)](#)
+  [![Spring Security](https://img.shields.io/badge/Spring%20Security-JWT-6DB33F?logo=springsecurity&logoColor=white)](#)
+  [![JPA](https://img.shields.io/badge/JPA-Hibernate-59666C?logo=hibernate&logoColor=white)](#)
+  [![Thymeleaf](https://img.shields.io/badge/Thymeleaf-SSR-005F0F?logo=thymeleaf&logoColor=white)](#)
+  [![MySQL](https://img.shields.io/badge/MySQL-8.0-4479A1?logo=mysql&logoColor=white)](#)
+  [![Redis](https://img.shields.io/badge/Redis-Cache-DC382D?logo=redis&logoColor=white)](#)
+  [![Gradle](https://img.shields.io/badge/Gradle-Build-02303A?logo=gradle&logoColor=white)](#)
+
 콘서트 예매 상황을 가정하여,  
 사용자가 공연과 회차를 조회하고 좌석을 선택하여 예매할 수 있는 **티켓팅 시스템**입니다.
 
@@ -166,50 +175,84 @@ erDiagram
 ## 9. 프로젝트 구조
 
 ```text
-src/main/java/com/ticketing
- ├─ global
- │   ├─ config
- │   ├─ exception
- │   └─ util
- │
- ├─ member
- │   ├─ controller
- │   ├─ dto
- │   ├─ entity
- │   ├─ repository
- │   └─ service
- │
- ├─ concert
- │   ├─ controller
- │   ├─ dto
- │   ├─ entity
- │   ├─ repository
- │   └─ service
- │
- ├─ seat
- │   ├─ controller
- │   ├─ dto
- │   ├─ entity
- │   ├─ repository
- │   └─ service
- │
- └─ reservation
-     ├─ controller
-     ├─ dto
-     ├─ entity
-     ├─ repository
-     └─ service
-```
-## 10. 진행 현황
+  src/main/java/com/ticketing
+   ├─ global
+   │   ├─ config
+   │   ├─ exception
+   │   └─ util
+   │
+   ├─ member
+   │   ├─ controller
+   │   ├─ dto
+   │   ├─ entity
+   │   ├─ repository
+   │   └─ service
+   │
+   ├─ concert
+   │   ├─ controller
+   │   ├─ dto
+   │   ├─ entity
+   │   ├─ repository
+   │   └─ service
+   │
+   ├─ seat
+   │   ├─ controller
+   │   ├─ dto
+   │   ├─ entity
+   │   ├─ repository
+   │   └─ service
+   │
+   ├─ queue
+   │   ├─ controller
+   │   ├─ dto
+   │   └─ service
+   │
+   └─ reservation
+       ├─ controller
+       ├─ dto
+       ├─ entity
+       ├─ repository
+       └─ service
 
-- [x] 프로젝트 초기 세팅
-- [x] ERD 설계
-- [x] 엔티티 설계
-- [x] 공연 목록/상세 조회
-- [x] 회차별 좌석 조회
-- [x] 회원가입 / 로그인
-- [x] 예매 기능
-- [ ] 예매 취소
-- [x] Redis 기반 좌석 선점
-- [x] 동시성 제어
-- [ ] 부하 테스트
+```
+## 10. Redis Key Design
+
+| Key Pattern | Type | Description | TTL |
+|---|---|---|---|
+| active:round:{scheduleNo} | Set | 현재 좌석 페이지 접근이 허용된 사
+용자 목록 | 없음 |
+| wait:round:{scheduleNo} | Sorted Set | 회차별 대기열 사용자 목록 |
+없음 |
+| seat:hold:{scheduleNo}:{seatNo} | String | 특정 좌석을 선점한 사용자
+loginId | 5분 |
+| RT:{loginId} | String | 사용자 Refresh Token | 토큰 만료 시간 기준 |
+
+## 11. Redis Usage
+
+이 프로젝트에서는 Redis를 다음 목적으로 사용한다.
+
+- 대기열 관리
+    - 회차별 활성 사용자(active:round:{scheduleNo})와 대기 사용자
+      (wait:round:{scheduleNo})를 관리한다.
+    - Lua 스크립트를 사용해 대기열 진입 및 승격 로직을 원자적으로 처리
+      한다.
+- 좌석 선점 관리
+    - seat:hold:{scheduleNo}:{seatNo} 키를 사용해 특정 좌석의 선점 상
+      태를 저장한다.
+    - 선점 정보는 5분 TTL을 가지며, 예약 완료 또는 페이지 이탈 시 삭제
+      된다.
+- 인증 관리
+    - RT:{loginId} 키를 사용해 사용자 Refresh Token을 저장한다.
+
+## 12. 진행 현황
+
+- [x] 프로젝트 초기 세팅 및 ERD 설계
+- [x] 공연/회차/좌석 조회 API 구현
+- [x] Spring Security + JWT 기반 인증 시스템
+- [x] Redis 기반 좌석 선점 로직 구현 (TTL 5분 적용)
+- [x] Redis Sorted Set 기반 대기열 시스템 구현
+- [x] Lua Script를 활용한 대기열 진입/승격 원자성 보장
+- [x] 동시성 제어 및 데이터 정합성 검증 (1차 완료)
+- [ ] 예매 취소 및 좌석 환원 로직
+- [ ] k6/JMeter를 활용한 고부하 상황 성능 측정 및 최적화
+- [ ] Redis Key 조회 구조 개선 및 선점 조회 성능 최적화
