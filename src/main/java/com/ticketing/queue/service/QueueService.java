@@ -2,6 +2,7 @@ package com.ticketing.queue.service;
 
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -9,7 +10,6 @@ import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
 
 import com.ticketing.queue.dto.QueueEnterResponseDto;
-import com.ticketing.seat.service.SeatService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -24,7 +24,8 @@ public class QueueService {
 	public QueueEnterResponseDto enter(Long scheduleNo, String loginId) {
 		String activeKey = "active:round:" + scheduleNo;
 		String waitKey = "wait:round:" + scheduleNo;
-
+		
+		cleanupStaleQueueUsers(scheduleNo);
 		DefaultRedisScript<List> script = new DefaultRedisScript<>();
 		script.setLocation(new ClassPathResource("scripts/queue-enter.lua"));
 		script.setResultType(List.class);
@@ -39,7 +40,8 @@ public class QueueService {
 	public QueueEnterResponseDto checkQueue(Long scheduleNo, String loginId) {
 		String activeKey = "active:round:" + scheduleNo;
 		String waitKey = "wait:round:" + scheduleNo;
-
+		
+		cleanupStaleQueueUsers(scheduleNo);
 		DefaultRedisScript<List> script = new DefaultRedisScript<>();
 		script.setLocation(new ClassPathResource("scripts/queue-status.lua"));
 		script.setResultType(List.class);
@@ -72,10 +74,11 @@ public class QueueService {
 		String activeKey = "active:round:" + scheduleNo;
 		String waitKey = "wait:round:" + scheduleNo;
 		String userHoldKey = userHoldKey(scheduleNo, loginId);
+		String heartbeatKey = heartbeatKey(scheduleNo, loginId);
 		
 		stringRedisTemplate.opsForSet().remove(activeKey, loginId);
 		stringRedisTemplate.opsForZSet().remove(waitKey, loginId);
-
+		stringRedisTemplate.delete(heartbeatKey);
 		Set<String> heldSeatIds = stringRedisTemplate.opsForSet().members(userHoldKey);
 		if(heldSeatIds == null || heldSeatIds.isEmpty()) {
 			stringRedisTemplate.delete(userHoldKey);
@@ -97,5 +100,41 @@ public class QueueService {
 	
 	private String userHoldKey(Long scheduleNo, String loginId) {
 		return "user:hold:" + scheduleNo + ":" + loginId;
+	}
+	
+	public void heartbeat(Long scheduleNo, String loginId) {
+		String heartbeatKey = heartbeatKey(scheduleNo, loginId);
+		stringRedisTemplate.opsForValue().set(heartbeatKey, "alive", 30, TimeUnit.SECONDS);
+	}
+	
+	private String heartbeatKey(Long scheduleNo, String loginId) {
+		return "queue:hb:" + scheduleNo + ":" + loginId;
+	}
+	
+	private void cleanupStaleQueueUsers(Long scheduleNo) {
+		String activeKey = "active:round:" + scheduleNo;
+		String waitKey = "wait:round:" + scheduleNo;
+		
+		Set<String> activeUsers = stringRedisTemplate.opsForSet().members(activeKey);
+		if(activeUsers != null) {
+			for(String loginId : activeUsers) {
+				String heartbeatKey = heartbeatKey(scheduleNo, loginId);
+				Boolean alive = stringRedisTemplate.hasKey(heartbeatKey);
+				if(!Boolean.TRUE.equals(alive)) {
+					stringRedisTemplate.opsForSet().remove(activeKey, loginId);
+				}
+			}
+		}
+		
+		Set<String> waitUsers = stringRedisTemplate.opsForZSet().range(waitKey,0, -1);
+		if(waitUsers != null) {
+			for(String loginId : waitUsers) {
+				String heartbeatKey = heartbeatKey(scheduleNo, loginId);
+				Boolean alive = stringRedisTemplate.hasKey(heartbeatKey);
+				if(!Boolean.TRUE.equals(alive)) {
+					stringRedisTemplate.opsForZSet().remove(waitKey, loginId);
+				}
+			}
+		}
 	}
 }

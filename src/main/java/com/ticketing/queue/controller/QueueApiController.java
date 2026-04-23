@@ -38,4 +38,12 @@ public class QueueApiController {
 		String loginId = authentication.getName();
 		return ResponseEntity.ok(queueService.checkQueue(scheduleNo, loginId));
 	}
+	
+	@PostMapping("/{scheduleNo}/heartbeat")
+	public ResponseEntity<Void> heartbeat(Authentication authentication,
+										@PathVariable("scheduleNo") Long scheduleNo) {
+		String loginId = authentication.getName();
+		queueService.heartbeat(scheduleNo, loginId);
+		return ResponseEntity.ok().build();
+	}
 }

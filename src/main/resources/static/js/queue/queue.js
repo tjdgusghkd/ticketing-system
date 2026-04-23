@@ -6,6 +6,45 @@ let scheduleNo = null;
 let queueLeaveSent = false;
 let pollingId = null;
 
+let heartbeatId = null;
+
+function startHeartbeat() {
+	if(heartbeatId) {
+		return;
+	}
+	
+	sendHeartbeat();
+	
+	heartbeatId = setInterval(() => {
+		sendHeartbeat();
+	}, 10000);
+}
+
+function stopHeartbeat() {
+	if(heartbeatId) {
+		clearInterval(heartbeatId);
+		heartbeatId = null;
+	}
+}
+
+async function sendHeartbeat() {
+	const accessToken = localStorage.getItem("accessToken");
+	if(!accessToken || !scheduleNo) {
+		return;
+	}
+	
+	try {
+		await fetch(`/api/queue/${scheduleNo}/heartbeat`, {
+			method: 'POST',
+			headers: {
+				Authorization: `Bearer ${accessToken}`
+			}
+		});		
+	} catch (error){ 
+		console.error('heartbeat failed',error);
+	}
+}
+
 function updateProgress(value) {
     progressFill.style.width = `${value}%`;
     progressText.textContent = `${value}%`;
@@ -52,11 +91,13 @@ async function enterQueue() {
         const data = await response.json();
 
         if (data.allowed) {
+			stopHeartbeat();
             location.replace(`/rounds/${scheduleNo}/seats`);
             return;
         }
 
         renderQueueInfo(data);
+		startHeartbeat();
         startPolling(scheduleNo);
     } catch (error) {
         console.error(error);
@@ -140,11 +181,12 @@ async function checkQueueStatus(scheduleNo) {
         const data = await response.json();
 
         if (data.allowed) {
+			stopHeartbeat();
             stopPolling();
             location.replace(`/rounds/${scheduleNo}/seats`);
             return;
         }
-
+		
         renderQueueInfo(data);
     } catch (error) {
         console.error(error);
@@ -162,6 +204,8 @@ async function leaveQueueOnExit() {
   }
 
   queueLeaveSent = true;
+  stopHeartbeat();
+  stopPolling();
 
   await fetch(`/api/queue/${scheduleNo}/leave`, {
     method: 'POST',
@@ -178,6 +222,8 @@ async function leaveQueueOnExit() {
 
 
 function handleAuthFail() {
+	stopPolling();
+	stopHeartbeat();
     alert('Login is required or your session has expired.');
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');

@@ -14,6 +14,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.ticketing.concert.entity.ConcertSchedule;
 import com.ticketing.concert.repository.ConcertScheduleRepository;
+import com.ticketing.global.exception.HoldExpiredException;
+import com.ticketing.global.exception.HoldNotFoundException;
+import com.ticketing.global.exception.HoldNotOwnedException;
+import com.ticketing.global.exception.ReservationLimitExceededException;
+import com.ticketing.global.exception.SeatAlreadyBookedException;
+import com.ticketing.global.exception.SeatHoldConflictException;
 import com.ticketing.member.entity.Member;
 import com.ticketing.member.repository.MemberRepository;
 import com.ticketing.reservation.entity.Reservation;
@@ -118,11 +124,15 @@ public class SeatService {
 	public void reserve(Long scheduleNo, String loginId, SeatReserveRequestDto request) {
 		List<Long> seatIds = request.getSeatIds();
 		
+		if (seatIds == null || seatIds.isEmpty()) {
+			throw new IllegalArgumentException("선택한 좌석이 없습니다.");
+		}
+		
 		int requestedCount = seatIds.size();
 		int existingCount = scheduleSeatRepository.countByMemberAndSchedule(loginId, scheduleNo);
-
+		
 		if (requestedCount > 4) {
-			throw new IllegalArgumentException("1인당 최대 4개까지만 예약 가능합니다.");
+			throw new ReservationLimitExceededException();
 		}
 
 		if (existingCount + requestedCount > 4) {
@@ -130,17 +140,18 @@ public class SeatService {
 					"이미 예약된 좌석을 포함하여 최대 4개까지만 구매 가능합니다. (현재 가능 수량: " + (4 - existingCount) + "개)");
 		}
 
-		if (request.getSeatIds() == null || request.getSeatIds().isEmpty()) {
-			throw new IllegalArgumentException("선택한 좌석이 없습니다.");
-		}
+		
 
 		List<String> keys = seatIds.stream().map(seatId -> holdKey(scheduleNo, seatId)).toList();
 		List<String> holders = stringRedisTemplate.opsForValue().multiGet(keys);
 		
 		for (String holder : holders) {
-			if (holder == null || !holder.equals(loginId)) {
-				throw new IllegalStateException("선점이 만료되거나 본인이 선점한 좌석이 아닙니다.");
-			}
+			  if (holder == null) {
+			      throw new HoldExpiredException();
+			  }
+			  if (!holder.equals(loginId)) {
+			      throw new HoldNotOwnedException();
+			  }
 		}
 
 		// JPA 벌크 연산으로 DB 업데이트
@@ -188,16 +199,15 @@ public class SeatService {
 		int dbCount = reservationList.size();
 
 		if (scheduleSeat.getStatus() == ScheduleSeatStatus.BOOKED) {
-			throw new IllegalStateException("이미 예약된 좌석입니다.");
+			throw new SeatAlreadyBookedException();
 		}
 
 		// N유저가 몇개의 좌석을 잡고 있는지
 		String userHoldKey = userHoldKey(scheduleNo, loginId);
-		Long holdCount = stringRedisTemplate.opsForSet().size(userHoldKey);
-		long currentHoldCount = holdCount != null ? holdCount : 0L;
+		long currentHoldCount = cleanupAndCountUserHolds(scheduleNo, loginId);
 		
 		if(currentHoldCount + dbCount+ 1 > 4) {
-			throw new IllegalStateException("1인당 최대 4자리까지 예매 가능합니다.");
+			throw new ReservationLimitExceededException();
 		}
 
 		
@@ -206,7 +216,7 @@ public class SeatService {
 		String holder = stringRedisTemplate.opsForValue().get(key);
 
 		if (holder != null && !holder.equals(loginId)) {
-			throw new IllegalStateException("다른 사용자가 선택 중인 좌석입니다.");
+			throw new SeatHoldConflictException();
 		}
 
 		stringRedisTemplate.opsForValue().set(key, loginId, 5, TimeUnit.MINUTES);
@@ -223,11 +233,11 @@ public class SeatService {
 		String holder = stringRedisTemplate.opsForValue().get(key);
 
 		if (holder == null) {
-			throw new IllegalArgumentException("선점된 좌석이 아닙니다.");
+			throw new HoldNotFoundException();
 		}
 
 		if (!holder.equals(loginId)) {
-			throw new IllegalStateException("본인이 선점한 좌석만 해제할 수 있습니다.");
+			throw new HoldNotOwnedException();
 		}
 		
 		String userHoldKey = userHoldKey(scheduleNo, loginId);
@@ -251,5 +261,30 @@ public class SeatService {
 	
 	private String userHoldKey(Long scheduleNo, String loginId) {
 		return "user:hold:" + scheduleNo  + ":" + loginId;
+	}
+	
+	private long cleanupAndCountUserHolds(Long scheduleNo, String loginId) {
+		String userHoldKey = userHoldKey(scheduleNo, loginId);
+
+		Set<String> seatNoMembers = stringRedisTemplate.opsForSet().members(userHoldKey);
+
+		if (seatNoMembers != null && !seatNoMembers.isEmpty()) {
+			for (String seatNoValue : seatNoMembers) {
+				Long seatNo = Long.valueOf(seatNoValue);
+				String seatHoldKey = holdKey(scheduleNo, seatNo);
+
+	            Boolean hasKey = stringRedisTemplate.hasKey(seatHoldKey);
+	            if (!Boolean.TRUE.equals(hasKey)) {
+	                stringRedisTemplate.opsForSet().remove(userHoldKey, seatNoValue);
+	            }
+	        }
+	    }
+	
+	    Long remainCount = stringRedisTemplate.opsForSet().size(userHoldKey);
+	    if (remainCount == null || remainCount == 0L) {
+	        stringRedisTemplate.delete(userHoldKey);
+	        return 0L;
+	    }
+	    return remainCount;
 	}
 }
