@@ -28,7 +28,7 @@ import com.ticketing.seat.repository.ScheduleSeatRepository;
 
 @SpringBootTest
 @Transactional
-public class SeatServiceConcurrencyTest {
+public class SeatServiceIntegrationTest {
 	
 	@Autowired
 	private SeatService seatService;
@@ -215,7 +215,7 @@ public class SeatServiceConcurrencyTest {
 	}
 	
 	@Test 
-	void holdSeat_성공시_userHoldSeat에도_좌석이_추가된다() {
+	void holdSeat_성공시_userHoldSet에도_좌석이_추가된다() {
 		Long scheduleNo = 1L;
 		Long scheduleSeatNo = 1L;
 		String loginId = "qwe123";
@@ -229,15 +229,11 @@ public class SeatServiceConcurrencyTest {
 		Boolean userHoldContainsSeat = stringRedisTemplate
 									.opsForSet()
 									.isMember(userHoldKey, String.valueOf(scheduleSeatNo));
-		Boolean exists = stringRedisTemplate.hasKey(userHoldKey);
 		
 		assertThat(holder).isEqualTo(loginId);
 		assertThat(Boolean.TRUE.equals(userHoldContainsSeat)).isTrue();
 	}
 	
-	/**
-	 * 
-	 */
 	@Test
 	void unholdSeat_성공시_seatHold와_userHold가_함께_삭제된다() {
 		Long scheduleNo = 1L;
@@ -261,7 +257,7 @@ public class SeatServiceConcurrencyTest {
 	}
 	
 	@Test
-	void holdSeat_호출시_stale_userhold는_정리된다() {
+	void holdSeat_호출시_stale_userHold는_정리된다() {
 		Long scheduleNo = 1L;
 		Long staleSeatNo = 999L;
 		Long newSeatNo = 5L;
