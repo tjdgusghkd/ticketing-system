@@ -1,9 +1,13 @@
   local activeKey = KEYS[1]
   local waitKey = KEYS[2]
-
+  local activeSchedulesKey = KEYS[3]
+  
   local loginId = ARGV[1]
   local maxCapacity = tonumber(ARGV[2])
   local now = tonumber(ARGV[3])
+  local scheduleNo = tonumber(ARGV[4])
+  
+  redis.call('SADD', activeSchedulesKey, scheduleNo)
 
   -- 이미 actvive에 있으면 바로 입장 허용 
   -- SISMEMBER: Set에 해당 멤버가 있으면 1, 없으면 0 반환
