@@ -7,6 +7,7 @@ import java.util.concurrent.TimeUnit;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import com.ticketing.queue.dto.QueueEnterResponseDto;
@@ -20,19 +21,21 @@ public class QueueService {
 	private static final int MAX_CAPACITY = 1;
 
 	private final StringRedisTemplate stringRedisTemplate;
+    private final DefaultRedisScript<List> queueEnterScript = createListScript("scripts/queue-enter.lua");
+    private final DefaultRedisScript<List> queueStatusScript = createListScript("scripts/queue-status.lua");
+    private final DefaultRedisScript<Long> queueLeaveScript = createLongScript("scripts/queue-leave.lua");
 	
 	public QueueEnterResponseDto enter(Long scheduleNo, String loginId) {
 		String activeKey = "active:round:" + scheduleNo;
 		String waitKey = "wait:round:" + scheduleNo;
-		
-		cleanupStaleQueueUsers(scheduleNo);
-		DefaultRedisScript<List> script = new DefaultRedisScript<>();
-		script.setLocation(new ClassPathResource("scripts/queue-enter.lua"));
-		script.setResultType(List.class);
+		String activeSchedulesKey = "active:schedules";
 
-		List<?> result = stringRedisTemplate.execute(script, List.of(activeKey, waitKey), loginId,
+		List<?> result = stringRedisTemplate.execute(queueEnterScript, 
+				List.of(activeKey, waitKey, activeSchedulesKey), 
+				loginId,
 				String.valueOf(MAX_CAPACITY),
-				String.valueOf(System.currentTimeMillis()));
+				String.valueOf(System.currentTimeMillis()),
+				String.valueOf(scheduleNo));
 
 		return toResponse(result, "대기열 진입 처리 실패");
 	}
@@ -40,13 +43,9 @@ public class QueueService {
 	public QueueEnterResponseDto checkQueue(Long scheduleNo, String loginId) {
 		String activeKey = "active:round:" + scheduleNo;
 		String waitKey = "wait:round:" + scheduleNo;
-		
-		cleanupStaleQueueUsers(scheduleNo);
-		DefaultRedisScript<List> script = new DefaultRedisScript<>();
-		script.setLocation(new ClassPathResource("scripts/queue-status.lua"));
-		script.setResultType(List.class);
 
-		List<?> result = stringRedisTemplate.execute(script, List.of(activeKey, waitKey), loginId,
+
+		List<?> result = stringRedisTemplate.execute(queueStatusScript, List.of(activeKey, waitKey), loginId,
 				String.valueOf(MAX_CAPACITY),
 				String.valueOf(System.currentTimeMillis()));
 
@@ -74,29 +73,16 @@ public class QueueService {
 		String activeKey = "active:round:" + scheduleNo;
 		String waitKey = "wait:round:" + scheduleNo;
 		String userHoldKey = userHoldKey(scheduleNo, loginId);
-		String heartbeatKey = heartbeatKey(scheduleNo, loginId);
+		String heartbeatKey = heartbeatKey(scheduleNo, loginId);	
 		
-		stringRedisTemplate.opsForSet().remove(activeKey, loginId);
-		stringRedisTemplate.opsForZSet().remove(waitKey, loginId);
-		stringRedisTemplate.delete(heartbeatKey);
-		Set<String> heldSeatIds = stringRedisTemplate.opsForSet().members(userHoldKey);
-		if(heldSeatIds == null || heldSeatIds.isEmpty()) {
-			stringRedisTemplate.delete(userHoldKey);
-			return;
-		}
+		stringRedisTemplate.execute(queueLeaveScript,
+				List.of(activeKey, waitKey, userHoldKey, heartbeatKey), 
+				loginId, 
+				String.valueOf(scheduleNo));
 		
-		List<String> holdKeys = heldSeatIds.stream()
-							.map(seatId -> holdKey(scheduleNo, Long.valueOf(seatId)))
-							.toList();
-		
-		stringRedisTemplate.delete(holdKeys);
-		stringRedisTemplate.delete(userHoldKey);
-		
+		promoteNextWaitingUser(scheduleNo);
 	}
 	
-	private String holdKey(Long scheduleNo, Long scheduleSeatNo) {
-		return "seat:hold:" + scheduleNo + ":" + scheduleSeatNo;
-	}
 	
 	private String userHoldKey(Long scheduleNo, String loginId) {
 		return "user:hold:" + scheduleNo + ":" + loginId;
@@ -114,8 +100,10 @@ public class QueueService {
 	private void cleanupStaleQueueUsers(Long scheduleNo) {
 		String activeKey = "active:round:" + scheduleNo;
 		String waitKey = "wait:round:" + scheduleNo;
-		
+		String activeSchedulesKey = "active:schedules";
 		Set<String> activeUsers = stringRedisTemplate.opsForSet().members(activeKey);
+		
+		
 		if(activeUsers != null) {
 			for(String loginId : activeUsers) {
 				String heartbeatKey = heartbeatKey(scheduleNo, loginId);
@@ -136,5 +124,64 @@ public class QueueService {
 				}
 			}
 		}
+		
+		Long activeCount = stringRedisTemplate.opsForSet().size(activeKey);
+		Long waitCount = stringRedisTemplate.opsForZSet().zCard(waitKey);
+		
+		boolean activeEmpty = activeCount == null || activeCount == 0L;
+		boolean waitEmpty = waitCount == null || waitCount == 0L;
+		
+		if(activeEmpty && waitEmpty) {
+			stringRedisTemplate.opsForSet().remove(activeSchedulesKey, String.valueOf(scheduleNo));
+		}
+	}
+	
+	@Scheduled(fixedDelay = 5000)
+	public void scheduledCleanup() {
+	    Set<String> activeScheduleIds = stringRedisTemplate.opsForSet().members("active:schedules");
+
+	    if (activeScheduleIds == null || activeScheduleIds.isEmpty()) return;
+
+	    for (String scheduleId : activeScheduleIds) {
+	        Long scheduleNo = Long.valueOf(scheduleId);
+	        
+	        // 2. 기존에 만드신 청소 로직 실행
+	        cleanupStaleQueueUsers(scheduleNo);
+	        promoteNextWaitingUser(scheduleNo);
+	    }
+	}
+	
+	private DefaultRedisScript<List> createListScript(String path) {
+		DefaultRedisScript<List> script = new DefaultRedisScript<>();
+        script.setLocation(new ClassPathResource(path));
+        script.setResultType(List.class);
+        return script;
+    }
+
+    private DefaultRedisScript<Long> createLongScript(String path) {
+        DefaultRedisScript<Long> script = new DefaultRedisScript<>();
+        script.setLocation(new ClassPathResource(path));
+        script.setResultType(Long.class);
+        return script;
+    }
+    
+    private void promoteNextWaitingUser(Long scheduleNo) {
+    	String activeKey = "active:round:" + scheduleNo;
+    	String waitKey = "wait:round:" + scheduleNo;
+    	
+    	Long activeCount = stringRedisTemplate.opsForSet().size(activeKey);
+    	if(activeCount != null && activeCount >= MAX_CAPACITY) {
+    		return;
+    	}
+    	
+    	Set<String> nextUsers = stringRedisTemplate.opsForZSet().range(waitKey,0,0);
+    	if(nextUsers == null || nextUsers.isEmpty()) {
+    		return;
+    	}
+    	
+    	String nextLoginId = nextUsers.iterator().next();
+    	
+    	stringRedisTemplate.opsForZSet().remove(waitKey,nextLoginId);
+    	stringRedisTemplate.opsForSet().add(activeKey, nextLoginId);
 	}
 }
