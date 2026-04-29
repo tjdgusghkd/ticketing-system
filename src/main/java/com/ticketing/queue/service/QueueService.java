@@ -24,7 +24,7 @@ public class QueueService {
     private final DefaultRedisScript<List> queueEnterScript = createListScript("scripts/queue-enter.lua");
     private final DefaultRedisScript<List> queueStatusScript = createListScript("scripts/queue-status.lua");
     private final DefaultRedisScript<Long> queueLeaveScript = createLongScript("scripts/queue-leave.lua");
-	
+	private final DefaultRedisScript<String> queuePromoteScript = createStringScript("scripts/queue-promote.lua");
 	public QueueEnterResponseDto enter(Long scheduleNo, String loginId) {
 		String activeKey = "active:round:" + scheduleNo;
 		String waitKey = "wait:round:" + scheduleNo;
@@ -165,23 +165,22 @@ public class QueueService {
         return script;
     }
     
+    private DefaultRedisScript<String> createStringScript(String path) {
+    	DefaultRedisScript<String> script = new DefaultRedisScript<>();
+    	script.setLocation(new ClassPathResource(path));
+    	script.setResultType(String.class);
+    	return script;
+    }
+    
     private void promoteNextWaitingUser(Long scheduleNo) {
     	String activeKey = "active:round:" + scheduleNo;
     	String waitKey = "wait:round:" + scheduleNo;
     	
-    	Long activeCount = stringRedisTemplate.opsForSet().size(activeKey);
-    	if(activeCount != null && activeCount >= MAX_CAPACITY) {
-    		return;
-    	}
+    	stringRedisTemplate.execute(
+    			queuePromoteScript,
+    			List.of(activeKey, waitKey),
+    			String.valueOf(MAX_CAPACITY)
+    			);
     	
-    	Set<String> nextUsers = stringRedisTemplate.opsForZSet().range(waitKey,0,0);
-    	if(nextUsers == null || nextUsers.isEmpty()) {
-    		return;
-    	}
-    	
-    	String nextLoginId = nextUsers.iterator().next();
-    	
-    	stringRedisTemplate.opsForZSet().remove(waitKey,nextLoginId);
-    	stringRedisTemplate.opsForSet().add(activeKey, nextLoginId);
 	}
 }
