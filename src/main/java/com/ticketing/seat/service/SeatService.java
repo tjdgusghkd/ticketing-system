@@ -4,7 +4,6 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -43,7 +42,8 @@ public class SeatService {
 	private final StringRedisTemplate stringRedisTemplate;
 	private final MemberRepository memberRepository;
 	private final ReservationRepository reservationRepository;
-
+	private final DefaultRedisScript<Long> seatHoldScript = createLongScript("scripts/seat-hold.lua");
+	private final DefaultRedisScript<Long> cleanupAndCountScript = createLongScript("scripts/cleanup-and-count.lua");
 	@Transactional(readOnly = true)
 	public SeatPageResponseDto getSeatPageInfo(Long scheduleNo) {
 		ConcertSchedule schedule = concertScheduleRepository.findDetailByScheduleNo(scheduleNo)
@@ -53,11 +53,10 @@ public class SeatService {
 	}
 
 	public List<SeatResponseDto> getSeats(Long scheduleNo, String loginId) {
-		List<ScheduleSeat> seats = scheduleSeatRepository.findByScheduleNo(scheduleNo); // 모든 좌석들을 db에서 가져옴 
+		List<ScheduleSeat> seats = scheduleSeatRepository.findByScheduleNo(scheduleNo); // 모든 좌석들을 db에서 가져옴
 
-		List<String> keys = seats.stream()
-				.map(seat -> holdKey(scheduleNo, seat.getScheduleSeatNo())).toList();
-		if(seats.isEmpty()) {
+		List<String> keys = seats.stream().map(seat -> holdKey(scheduleNo, seat.getScheduleSeatNo())).toList();
+		if (seats.isEmpty()) {
 			return List.of();
 		}
 		DefaultRedisScript<List> script = new DefaultRedisScript<>();
@@ -66,7 +65,7 @@ public class SeatService {
 
 		List<?> redisResult = stringRedisTemplate.execute(script, keys, loginId);
 
-		if(redisResult == null || redisResult.size() != seats.size() * 2) {
+		if (redisResult == null || redisResult.size() != seats.size() * 2) {
 			throw new IllegalStateException("좌석 조회 결과가 올바르지 않습니다.");
 		}
 		return buildSeatResponses(seats, redisResult, loginId);
@@ -85,17 +84,9 @@ public class SeatService {
 			boolean held = holder != null;
 			boolean holdByMe = holder != null && holder.equals(loginId);
 
-			return new SeatResponseDto(
-					scheduleSeat.getScheduleSeatNo(), 
-					scheduleSeat.getSeat().getSeatNumber(),
-					scheduleSeat.getSeat().getSection(), 
-					scheduleSeat.getSeat().getRowNum(), 
-					scheduleSeat.getPrice(),
-					booked, 
-					held, 
-					holdByMe, 
-					holdExpiresInSeconds
-					);
+			return new SeatResponseDto(scheduleSeat.getScheduleSeatNo(), scheduleSeat.getSeat().getSeatNumber(),
+					scheduleSeat.getSeat().getSection(), scheduleSeat.getSeat().getRowNum(), scheduleSeat.getPrice(),
+					booked, held, holdByMe, holdExpiresInSeconds);
 		}).toList();
 	}
 
@@ -109,28 +100,29 @@ public class SeatService {
 	}
 
 	private Long toHoldExpireSeconds(Object value) {
-	      if (value == null) {
-	          return null;
-	      }
+		if (value == null) {
+			return null;
+		}
 
-	      long pttl = Long.parseLong(value.toString());
-	      if (pttl <= 0) {
-	          return null;
-	      }
-	      
-	      return (pttl + 999) / 1000;
+		long pttl = Long.parseLong(value.toString());
+		if (pttl <= 0) {
+			return null;
+		}
+
+		return (pttl + 999) / 1000;
 	}
+
 	@Transactional
 	public void reserve(Long scheduleNo, String loginId, SeatReserveRequestDto request) {
 		List<Long> seatIds = request.getSeatIds();
-		
+
 		if (seatIds == null || seatIds.isEmpty()) {
 			throw new IllegalArgumentException("선택한 좌석이 없습니다.");
 		}
-		
+
 		int requestedCount = seatIds.size();
 		int existingCount = scheduleSeatRepository.countByMemberAndSchedule(loginId, scheduleNo);
-		
+
 		if (requestedCount > 4) {
 			throw new ReservationLimitExceededException();
 		}
@@ -140,18 +132,16 @@ public class SeatService {
 					"이미 예약된 좌석을 포함하여 최대 4개까지만 구매 가능합니다. (현재 가능 수량: " + (4 - existingCount) + "개)");
 		}
 
-		
-
 		List<String> keys = seatIds.stream().map(seatId -> holdKey(scheduleNo, seatId)).toList();
 		List<String> holders = stringRedisTemplate.opsForValue().multiGet(keys);
-		
+
 		for (String holder : holders) {
-			  if (holder == null) {
-			      throw new HoldExpiredException();
-			  }
-			  if (!holder.equals(loginId)) {
-			      throw new HoldNotOwnedException();
-			  }
+			if (holder == null) {
+				throw new HoldExpiredException();
+			}
+			if (!holder.equals(loginId)) {
+				throw new HoldNotOwnedException();
+			}
 		}
 
 		// JPA 벌크 연산으로 DB 업데이트
@@ -177,14 +167,12 @@ public class SeatService {
 		String userHoldKey = userHoldKey(scheduleNo, loginId);
 		stringRedisTemplate.delete(keys);
 		// userHoldKey의 원소들 삭제(ex {10, 11} -> {})
-		stringRedisTemplate.opsForSet().remove(
-				userHoldKey,
-				seatIds.stream().map(String::valueOf).toArray(String[]::new)
-				);
-		
+		stringRedisTemplate.opsForSet().remove(userHoldKey,
+				seatIds.stream().map(String::valueOf).toArray(String[]::new));
+
 		Long remainCount = stringRedisTemplate.opsForSet().size(userHoldKey);
 		// userHoldKey의 원소가 비어있으면 set key 자체 삭제
-		if(remainCount != null && remainCount == 0L) {
+		if (remainCount != null && remainCount == 0L) {
 			stringRedisTemplate.delete(userHoldKey);
 		}
 	}
@@ -194,33 +182,34 @@ public class SeatService {
 		ScheduleSeat scheduleSeat = scheduleSeatRepository
 				.findByScheduleNoAndScheduleSeatNoForUpdate(scheduleNo, scheduleSeatNo)
 				.orElseThrow(() -> new IllegalArgumentException("존재하지 않는 좌석입니다."));
-		List<Reservation> reservationList = reservationRepository.findByMember_LoginIdAndSchedule_ScheduleNo(loginId,
-				scheduleNo);
-		int dbCount = reservationList.size();
 
 		if (scheduleSeat.getStatus() == ScheduleSeatStatus.BOOKED) {
 			throw new SeatAlreadyBookedException();
 		}
 
-		// N유저가 몇개의 좌석을 잡고 있는지
-		String userHoldKey = userHoldKey(scheduleNo, loginId);
+		List<Reservation> reservationList = reservationRepository
+				.findByMember_LoginIdAndSchedule_ScheduleNo(loginId,scheduleNo);
+		int dbCount = reservationList.size();
+
 		long currentHoldCount = cleanupAndCountUserHolds(scheduleNo, loginId);
-		
-		if(currentHoldCount + dbCount+ 1 > 4) {
+		if (currentHoldCount + dbCount + 1 > 4) {
 			throw new ReservationLimitExceededException();
 		}
 
-		
-		// 해당 좌석을 누가 잡고 있는지에 대한 key
-		String key = holdKey(scheduleNo, scheduleSeatNo);
-		String holder = stringRedisTemplate.opsForValue().get(key);
+		String seatHoldKey = holdKey(scheduleNo, scheduleSeatNo);
+		String userHoldKey = userHoldKey(scheduleNo, loginId);
 
-		if (holder != null && !holder.equals(loginId)) {
-			throw new SeatHoldConflictException();
+		Long result = stringRedisTemplate.execute(seatHoldScript, List.of(seatHoldKey, userHoldKey), loginId,
+
+				String.valueOf(scheduleSeatNo), String.valueOf(300));
+
+		if (result == null) {
+			throw new IllegalStateException("좌석 선점 처리 실패");
 		}
 
-		stringRedisTemplate.opsForValue().set(key, loginId, 5, TimeUnit.MINUTES);
-		stringRedisTemplate.opsForSet().add(userHoldKey, String.valueOf(scheduleSeatNo));
+		if (result == 0L) {
+			throw new SeatHoldConflictException();
+		}
 	}
 
 	@Transactional
@@ -239,14 +228,14 @@ public class SeatService {
 		if (!holder.equals(loginId)) {
 			throw new HoldNotOwnedException();
 		}
-		
+
 		String userHoldKey = userHoldKey(scheduleNo, loginId);
-		
+
 		stringRedisTemplate.delete(key);
 		stringRedisTemplate.opsForSet().remove(userHoldKey, String.valueOf(scheduleSeatNo));
-		
+
 		Long remainCount = stringRedisTemplate.opsForSet().size(userHoldKey);
-		if(remainCount != null && remainCount == 0L) {
+		if (remainCount != null && remainCount == 0L) {
 			stringRedisTemplate.delete(userHoldKey);
 		}
 	}
@@ -258,33 +247,24 @@ public class SeatService {
 	private String holdKey(Long scheduleNo, Long scheduleSeatNo) {
 		return "seat:hold:" + scheduleNo + ":" + scheduleSeatNo;
 	}
-	
+
 	private String userHoldKey(Long scheduleNo, String loginId) {
-		return "user:hold:" + scheduleNo  + ":" + loginId;
+		return "user:hold:" + scheduleNo + ":" + loginId;
 	}
-	
+
 	private long cleanupAndCountUserHolds(Long scheduleNo, String loginId) {
 		String userHoldKey = userHoldKey(scheduleNo, loginId);
 
-		Set<String> seatNoMembers = stringRedisTemplate.opsForSet().members(userHoldKey);
-
-		if (seatNoMembers != null && !seatNoMembers.isEmpty()) {
-			for (String seatNoValue : seatNoMembers) {
-				Long seatNo = Long.valueOf(seatNoValue);
-				String seatHoldKey = holdKey(scheduleNo, seatNo);
-
-	            Boolean hasKey = stringRedisTemplate.hasKey(seatHoldKey);
-	            if (!Boolean.TRUE.equals(hasKey)) {
-	                stringRedisTemplate.opsForSet().remove(userHoldKey, seatNoValue);
-	            }
-	        }
-	    }
+		Long remainCount = stringRedisTemplate.execute(cleanupAndCountScript, List.of(userHoldKey), String.valueOf(scheduleNo));
+		return remainCount == null ? 0L : remainCount;
+	}
 	
-	    Long remainCount = stringRedisTemplate.opsForSet().size(userHoldKey);
-	    if (remainCount == null || remainCount == 0L) {
-	        stringRedisTemplate.delete(userHoldKey);
-	        return 0L;
-	    }
-	    return remainCount;
+	private DefaultRedisScript<Long> createLongScript(String path) {
+		DefaultRedisScript<Long> script = new DefaultRedisScript<>();
+		script.setLocation(new ClassPathResource(path));
+		script.setResultType(Long.class);
+		
+		return script;
+		
 	}
 }
