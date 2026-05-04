@@ -2,8 +2,8 @@ package com.ticketing.seat.service;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -44,6 +44,9 @@ public class SeatService {
 	private final ReservationRepository reservationRepository;
 	private final DefaultRedisScript<Long> seatHoldScript = createLongScript("scripts/seat-hold.lua");
 	private final DefaultRedisScript<Long> cleanupAndCountScript = createLongScript("scripts/cleanup-and-count.lua");
+	private final DefaultRedisScript<Long> seatReserveValidateScript = createLongScript("scripts/seat-reserve-validate.lua");
+	private final DefaultRedisScript<Long> seatReserveCleanupScript = createLongScript("scripts/seat-reserve-cleanup.lua");
+	
 	@Transactional(readOnly = true)
 	public SeatPageResponseDto getSeatPageInfo(Long scheduleNo) {
 		ConcertSchedule schedule = concertScheduleRepository.findDetailByScheduleNo(scheduleNo)
@@ -114,6 +117,7 @@ public class SeatService {
 
 	@Transactional
 	public void reserve(Long scheduleNo, String loginId, SeatReserveRequestDto request) {
+		
 		List<Long> seatIds = request.getSeatIds();
 
 		if (seatIds == null || seatIds.isEmpty()) {
@@ -131,17 +135,30 @@ public class SeatService {
 			throw new IllegalStateException(
 					"이미 예약된 좌석을 포함하여 최대 4개까지만 구매 가능합니다. (현재 가능 수량: " + (4 - existingCount) + "개)");
 		}
-
-		List<String> keys = seatIds.stream().map(seatId -> holdKey(scheduleNo, seatId)).toList();
-		List<String> holders = stringRedisTemplate.opsForValue().multiGet(keys);
-
-		for (String holder : holders) {
-			if (holder == null) {
-				throw new HoldExpiredException();
-			}
-			if (!holder.equals(loginId)) {
-				throw new HoldNotOwnedException();
-			}
+		
+		
+		List<String> validateArgs = new ArrayList<>();
+		validateArgs.add(loginId);
+		validateArgs.add(String.valueOf(scheduleNo));
+		validateArgs.add(String.valueOf(seatIds.size()));
+		seatIds.stream().map(String::valueOf).forEach(validateArgs::add);
+		
+		Long validateResult = stringRedisTemplate.execute(
+				seatReserveValidateScript, 
+				List.of(), 
+				validateArgs.toArray(String[]::new)
+			);
+		
+		if(validateResult == null) {
+			throw new IllegalStateException("예약용 hold 검증 처리 실패");
+		}
+		
+		if(validateResult == 0L) {
+			throw new HoldExpiredException();
+		}
+		
+		if(validateResult == 1L) {
+			throw new HoldNotOwnedException();
 		}
 
 		// JPA 벌크 연산으로 DB 업데이트
@@ -156,25 +173,36 @@ public class SeatService {
 		ConcertSchedule schedule = concertScheduleRepository.findById(scheduleNo)
 				.orElseThrow(() -> new IllegalArgumentException("회차 없음"));
 
-		for (Long seatId : seatIds) {
-			ScheduleSeat seat = scheduleSeatRepository.findById(seatId).orElseThrow();
-
-			Reservation reservation = Reservation.builder().member(member).scheduleSeat(seat).schedule(schedule)
-					.reservationStatus(ReservationStatus.RESERVED).build();
-			reservationRepository.save(reservation);
+		List<ScheduleSeat> seats = scheduleSeatRepository.findAllById(seatIds);
+		
+		if(seats.size() != seatIds.size()) {
+			throw new IllegalStateException("일부 좌석 정보를 찾을 수 없습니다");
 		}
-
+		List<Reservation> reservations = seats.stream()
+				.map(seat -> Reservation.builder()
+						.member(member)
+						.scheduleSeat(seat)
+						.schedule(schedule)
+						.reservationStatus(ReservationStatus.RESERVED)
+						.build())
+						.toList();
+		
+		reservationRepository.saveAll(reservations);
+		
 		String userHoldKey = userHoldKey(scheduleNo, loginId);
-		stringRedisTemplate.delete(keys);
-		// userHoldKey의 원소들 삭제(ex {10, 11} -> {})
-		stringRedisTemplate.opsForSet().remove(userHoldKey,
-				seatIds.stream().map(String::valueOf).toArray(String[]::new));
-
-		Long remainCount = stringRedisTemplate.opsForSet().size(userHoldKey);
-		// userHoldKey의 원소가 비어있으면 set key 자체 삭제
-		if (remainCount != null && remainCount == 0L) {
-			stringRedisTemplate.delete(userHoldKey);
-		}
+		
+		List<String> cleanupArgs = new ArrayList<>();
+		
+		cleanupArgs.add(String.valueOf(scheduleNo));
+		cleanupArgs.add(String.valueOf(seatIds.size()));
+		
+		seatIds.stream().map(String::valueOf).forEach(cleanupArgs::add);
+		
+		stringRedisTemplate.execute(
+				seatReserveCleanupScript,
+				List.of(userHoldKey),
+				cleanupArgs.toArray(String[]::new)
+			);
 	}
 
 	@Transactional
@@ -265,6 +293,5 @@ public class SeatService {
 		script.setResultType(Long.class);
 		
 		return script;
-		
 	}
 }
