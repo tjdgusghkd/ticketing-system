@@ -20,7 +20,7 @@ public class SeatPageController {
 	private final QueueService queueService;
 	
 	@GetMapping("/rounds/{scheduleNo}/seats")
-	public String seatSelectPage(@PathVariable("scheduleNo") Long scheduleNo, Model model) {
+	public String seatSelectPage(@PathVariable("scheduleNo") Long scheduleNo, Model model, Authentication authentication) {
 	    SeatPageResponseDto dto = seatService.getSeatPageInfo(scheduleNo);
 	    
 	    

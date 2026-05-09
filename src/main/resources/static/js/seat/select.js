@@ -6,8 +6,59 @@ let holdTimerInterval = null;
 let holdDeadline = null;
 let queueLeaveSent = false;
 
+let heartbeatId = null;
+let queueBlockedHandled = false;
+
+function startHeartbeat() {
+	if(heartbeatId) {
+		return;
+	}
+	
+	sendHeartbeat();
+	
+	heartbeatId = setInterval(() => {
+		sendHeartbeat();
+	}, 10000);
+}
+
+function stopHeartbeat() {
+	if(heartbeatId) {
+		clearInterval(heartbeatId);
+		heartbeatId = null;
+	}
+}
+
+async function sendHeartbeat() {
+	const accessToken = localStorage.getItem("accessToken");
+	if(!accessToken || !scheduleNo) {
+		return;
+	}
+	
+	try {
+		const response = await fetch(`/api/queue/${scheduleNo}/heartbeat`, {
+			method: 'POST',
+			headers: {
+				Authorization: `Bearer ${accessToken}`				
+			}
+		});
+		
+		if(response.status == 401) {
+			handleAuthFail();
+			return;
+		}
+		
+		if(response.status == 403) {
+			handleQueueBlocked();
+		}
+	} catch(error) {
+		console.error('heartbeat failed', error);
+	}
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
   console.log('select.js loaded');
+  
+  startHeartbeat();
   await loadSeats();
 
   const completeBtn = document.querySelector('#completeBtn');
@@ -22,11 +73,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 window.addEventListener('pagehide', () => {
-  leaveQueueOnExit();
+	stopHeartbeat();
+	leaveQueueOnExit();
 });
 
 window.addEventListener('beforeunload', () => {
-  leaveQueueOnExit();
+	stopHeartbeat();
+	leaveQueueOnExit();
 });
 
 async function loadSeats() {
@@ -382,17 +435,26 @@ async function reserveSeats() {
 }
 
 function handleAuthFail() {
-  alert('로그인이 필요하거나 인증이 만료되었습니다.');
-  localStorage.removeItem('accessToken');
-  localStorage.removeItem('refreshToken');
-  location.href = '/members/signin';
+	stopHeartbeat();
+	alert('로그인이 필요하거나 인증이 만료되었습니다.');
+	localStorage.removeItem('accessToken');
+	localStorage.removeItem('refreshToken');
+	location.href = '/members/signin';
 }
 
 function handleQueueBlocked() {
-  console.log('handleQueueBlocked called');
-  alert('현재 좌석 페이지 입장 권한이 없습니다. 대기열로 이동합니다.');
-  location.href = `/queue/queue/${scheduleNo}`;
+	if(queueBlockedHandled) {
+		return;
+	}
+	
+	queueBlockedHandled = true;
+	stopHeartbeat();
+	
+	alert('현재 좌석 페이지 입장 권한이 없습니다. 대기열로 이동합니다.');
+	
+	location.href = `/queue/queue/${scheduleNo}`;
 }
+
 
 async function leaveQueueOnExit() {
   if (queueLeaveSent) {
