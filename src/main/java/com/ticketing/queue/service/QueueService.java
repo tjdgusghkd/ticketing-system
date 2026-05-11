@@ -18,7 +18,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class QueueService {
 
-	private static final int MAX_CAPACITY = 1;
+	private static final int MAX_CAPACITY = 2;
 
 	private final StringRedisTemplate stringRedisTemplate;
     private final DefaultRedisScript<List> queueEnterScript = createListScript("scripts/queue-enter.lua");
