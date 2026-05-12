@@ -1,5 +1,7 @@
 const MAX_SELECT_COUNT = 4;
 
+let seatRefreshId = null;
+
 let seatData = [];
 let selectedSeats = [];
 let holdTimerInterval = null;
@@ -8,6 +10,27 @@ let queueLeaveSent = false;
 
 let heartbeatId = null;
 let queueBlockedHandled = false;
+
+function startSeatRefresh() {
+	if(seatRefreshId) {
+		return;
+	}
+	
+	seatRefreshId = setInterval(async () => {
+		if(queueBlockedHandled) {
+			return;
+		}
+		
+		await loadSeats();
+	}, 1500);
+}
+
+function stopSeatRefresh() {
+	if(seatRefreshId) {
+		clearInterval(seatRefreshId);
+		seatRefreshId = null;
+	}
+}
 
 function startHeartbeat() {
 	if(heartbeatId) {
@@ -60,6 +83,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   
   startHeartbeat();
   await loadSeats();
+  startSeatRefresh();
 
   const completeBtn = document.querySelector('#completeBtn');
   const confirmBookingBtn = document.querySelector('#confirmBookingBtn');
@@ -74,11 +98,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 window.addEventListener('pagehide', () => {
 	stopHeartbeat();
+	stopSeatRefresh();
 	leaveQueueOnExit();
 });
 
 window.addEventListener('beforeunload', () => {
 	stopHeartbeat();
+	stopSeatRefresh();
 	leaveQueueOnExit();
 });
 
@@ -231,8 +257,8 @@ async function holdSeat(seat) {
     }
 
     if (response.status === 409) {
-      const message = await response.text();
-      alert(message);
+      const errorBody = await response.json();
+      alert(errorBody.message);
       await loadSeats();
       return;
     }
@@ -415,8 +441,8 @@ async function reserveSeats() {
     }
 
     if (response.status === 409) {
-      const message = await response.text();
-      alert(message);
+      const errorBody = await response.json();
+      alert(errorBody.message);
       await loadSeats();
       return;
     }
@@ -436,6 +462,8 @@ async function reserveSeats() {
 
 function handleAuthFail() {
 	stopHeartbeat();
+	stopSeatRefresh();
+	
 	alert('로그인이 필요하거나 인증이 만료되었습니다.');
 	localStorage.removeItem('accessToken');
 	localStorage.removeItem('refreshToken');
@@ -449,6 +477,7 @@ function handleQueueBlocked() {
 	
 	queueBlockedHandled = true;
 	stopHeartbeat();
+	stopSeatRefresh();
 	
 	alert('현재 좌석 페이지 입장 권한이 없습니다. 대기열로 이동합니다.');
 	
