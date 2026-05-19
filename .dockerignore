@@ -1,0 +1,17 @@
+.git
+.github
+.gradle
+.metadata
+.settings
+bin
+build
+out
+
+*.log
+*.tmp
+*.swp
+
+.env
+certbot
+
+node_modules

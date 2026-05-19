@@ -6,7 +6,7 @@ export const options = {
   duration: __ENV.DURATION || '1m',
 };
 
-const BASE_URL = __ENV.BASE_URL || 'http://localhost:8080';
+const BASE_URL = __ENV.BASE_URL || 'https://tickethubs.duckdns.org';
 const SCHEDULE_NO = __ENV.SCHEDULE_NO || '1';
 const ACCESS_TOKEN = __ENV.ACCESS_TOKEN || 'REPLACE_ME';
 const STATUS_SLEEP_SECONDS = Number(__ENV.STATUS_SLEEP_SECONDS || 2);
