@@ -7,8 +7,10 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 
 @RestControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
 	@ExceptionHandler(BusinessException.class)
 	public ResponseEntity<ErrorResponse> handleBusinessException(BusinessException e, HttpServletRequest request){
@@ -42,6 +44,7 @@ public class GlobalExceptionHandler {
      @ExceptionHandler(Exception.class)
      public ResponseEntity<ErrorResponse> handleException(Exception e, HttpServletRequest request
      ) {
+    	 log.error("Unhandled exception on {} {}", request.getMethod(), request.getRequestURI(), e);
          ErrorResponse response = ErrorResponse.builder()
                  .timestamp(LocalDateTime.now())
                  .status(ErrorCode.INTERNAL_SERVER_ERROR.getStatus().value())
