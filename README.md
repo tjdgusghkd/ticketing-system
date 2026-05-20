@@ -80,6 +80,8 @@
   - AWS EC2
   - AWS RDS
   - Nginx
+  - - Spring Boot Actuator
+  - Prometheus
 
   ### Test
   - JUnit
@@ -234,6 +236,8 @@ Login
       - Spring Boot Application
       - Redis
       - Nginx
+      - Spring Boot Actuator
+      - Prometheus Metrics Export
   - RDS
       - MySQL
   - Docker Compose
@@ -248,8 +252,67 @@ Login
   - polling을 통한 좌석 상태 동기화
 
   ---
+  
+  ## 10. 운영 모니터링 및 헬스체크
+  배포 환경에서 단순 API 동작 확인을 넘어,  
+  서버 상태와 부하 테스트 중 내부 자원 사용량을 관측하기 위해  
+  Spring Boot Actuator와 Prometheus 기반 모니터링을 적용했습니다.
 
-  ## 10. ERD
+  ### Health Check
+
+  Actuator Health Endpoint를 통해 애플리케이션 및 주요 의존성 상태를 확인했습니다.
+
+  - `/actuator/health`
+
+  확인 항목
+
+  - Application 상태
+  - Redis 연결 상태
+  - DB 연결 상태
+
+  이를 통해 부하 테스트 중 응답 지연 발생 시  
+  서버 다운 여부와 단순 성능 저하를 구분했습니다.
+
+  예시:
+
+  - `UP` → 서버 정상, 병목 발생 가능성 분석
+  - `DOWN` → 애플리케이션 또는 외부 의존성 장애
+
+---
+
+### Prometheus Metrics
+
+  Prometheus Endpoint를 통해 부하 테스트 중  
+  JVM 및 서버 내부 상태를 수집했습니다.
+
+  - `/actuator/prometheus`
+
+  주요 관측 지표
+
+  - JVM Heap / Non-Heap Memory
+  - CPU Usage
+  - GC Pause Time
+  - HTTP Request Latency
+  - Tomcat Thread Pool 상태
+  - Active Thread 수
+
+  이를 통해 단순 응답 시간 측정이 아닌  
+  응답 지연의 내부 원인을 추적할 수 있도록 구성했습니다.
+
+---
+
+### 부하 테스트 관측 활용
+
+  k6 부하 테스트와 함께 메트릭을 확인하여
+
+  - 동시 접속 증가 시 Thread Pool 포화 여부
+  - Redis 기반 조회 구간의 CPU 효율성
+  - 응답 지연 발생 시 GC / Thread 경쟁 여부
+  를 분석할 수 있도록 설계했습니다.
+  
+---
+
+  ## 11. ERD
 
   주요 테이블
 
@@ -270,7 +333,7 @@ Login
   ```
   ---
 
-  ## 11. Redis Key Design
+  ## 12. Redis Key Design
 
   | Key Pattern | Type | Description | TTL |
   |---|---|---|---|
@@ -283,7 +346,7 @@ Login
 
   ---
   
-  ## 12. 프로젝트 구조
+  ## 13. 프로젝트 구조
 
 ```bash
   src/main/java/com/ticketing
@@ -328,7 +391,7 @@ Login
 ```
   ---
 
-  ## 13. 트러블슈팅
+  ## 14. 트러블슈팅
 
   - queue -> seat 이동 시 leaveQueueOnExit()가 먼저 호출되어 active 권한이 사라지던 문제 수정
   - seat 페이지에서 heartbeat 누락으로 일정 시간 후 권한 상실 및 반복 alert가 발생하던 문제 수정
@@ -338,7 +401,7 @@ Login
 
   ---
 
-  ## 14. 진행 현황
+  ## 15. 진행 현황
 
   - [x] 프로젝트 초기 세팅 및 ERD 설계
   - [x] 공연/회차/좌석 조회 API 구현
@@ -353,13 +416,17 @@ Login
   - [x] RDS 연동 및 배포 환경 수동 검증
   - [ ] 도메인 및 SSL 적용
   - [ ] 예매 취소 및 좌석 환원 로직
+  - [x] Spring Boot Actuator Health Check 적용
+  - [x] Prometheus Metrics Export 구성
 
   ---
 
-  ## 15. 회고
+  ## 16. 회고
 
   이 프로젝트에서는 일반적인 CRUD 기능 확장보다,
   실제 티켓팅 시스템에서 중요한 문제인 동시성, 정합성, 성능, 배포 환경 차이를 직접 다뤘습니다.
+  또한 단순 부하 테스트 수치 확인을 넘어 Actuator와 Prometheus 기반 관측을 통해  
+  응답 지연 현상을 내부 메트릭 관점에서 해석하는 경험을 얻었습니다.
 
   특히 다음을 배웠습니다.
 
