@@ -25,6 +25,7 @@ public class QueueService {
     private final DefaultRedisScript<List> queueStatusScript = createListScript("scripts/queue-status.lua");
     private final DefaultRedisScript<Long> queueLeaveScript = createLongScript("scripts/queue-leave.lua");
 	private final DefaultRedisScript<String> queuePromoteScript = createStringScript("scripts/queue-promote.lua");
+	private final DefaultRedisScript<String> queueMaintainScript = createStringScript("scripts/queue-maintain.lua");
 	public QueueEnterResponseDto enter(Long scheduleNo, String loginId) {
 		String activeKey = "active:round:" + scheduleNo;
 		String waitKey = "wait:round:" + scheduleNo;
@@ -97,43 +98,16 @@ public class QueueService {
 		return "queue:hb:" + scheduleNo + ":" + loginId;
 	}
 	
-	private void cleanupStaleQueueUsers(Long scheduleNo) {
+	private void maintainQueue(Long scheduleNo) {
 		String activeKey = "active:round:" + scheduleNo;
 		String waitKey = "wait:round:" + scheduleNo;
 		String activeSchedulesKey = "active:schedules";
-		Set<String> activeUsers = stringRedisTemplate.opsForSet().members(activeKey);
-		
-		
-		if(activeUsers != null) {
-			for(String loginId : activeUsers) {
-				String heartbeatKey = heartbeatKey(scheduleNo, loginId);
-				Boolean alive = stringRedisTemplate.hasKey(heartbeatKey);
-				if(!Boolean.TRUE.equals(alive)) {
-					stringRedisTemplate.opsForSet().remove(activeKey, loginId);
-				}
-			}
-		}
-		
-		Set<String> waitUsers = stringRedisTemplate.opsForZSet().range(waitKey,0, -1);
-		if(waitUsers != null) {
-			for(String loginId : waitUsers) {
-				String heartbeatKey = heartbeatKey(scheduleNo, loginId);
-				Boolean alive = stringRedisTemplate.hasKey(heartbeatKey);
-				if(!Boolean.TRUE.equals(alive)) {
-					stringRedisTemplate.opsForZSet().remove(waitKey, loginId);
-				}
-			}
-		}
-		
-		Long activeCount = stringRedisTemplate.opsForSet().size(activeKey);
-		Long waitCount = stringRedisTemplate.opsForZSet().zCard(waitKey);
-		
-		boolean activeEmpty = activeCount == null || activeCount == 0L;
-		boolean waitEmpty = waitCount == null || waitCount == 0L;
-		
-		if(activeEmpty && waitEmpty) {
-			stringRedisTemplate.opsForSet().remove(activeSchedulesKey, String.valueOf(scheduleNo));
-		}
+
+		stringRedisTemplate.execute(
+				queueMaintainScript,
+				List.of(activeKey, waitKey, activeSchedulesKey),
+				String.valueOf(scheduleNo),
+				String.valueOf(MAX_CAPACITY));
 	}
 	
 	@Scheduled(fixedDelay = 5000)
@@ -146,8 +120,7 @@ public class QueueService {
 	        Long scheduleNo = Long.valueOf(scheduleId);
 	        
 	        // 2. 기존에 만드신 청소 로직 실행
-	        cleanupStaleQueueUsers(scheduleNo);
-	        promoteNextWaitingUser(scheduleNo);
+	        maintainQueue(scheduleNo);
 	    }
 	}
 	
