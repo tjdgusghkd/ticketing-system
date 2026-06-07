@@ -1,5 +1,42 @@
 document.addEventListener('DOMContentLoaded', () => {
     loadMyPage();
+	
+	document.addEventListener('click', async (e) => {
+	    if (!e.target.classList.contains('cancel-btn')) {
+	        return;
+	    }
+
+	    const reservationNo = e.target.dataset.reservationNo;
+		console.log(reservationNo);
+	    const token =
+	        localStorage.getItem('accessToken');
+
+	    if (!confirm('예매를 취소하시겠습니까?')) {
+	        return;
+	    }
+
+	    try {
+	        const res = await fetch(
+	            `/api/reservations/${reservationNo}`,
+	            {
+	                method: 'DELETE',
+	                headers: {
+	                    Authorization: 'Bearer ' + token
+	                }
+	            }
+	        );
+
+	        if (!res.ok) {
+	            throw new Error();
+	        }
+
+	        alert('예매가 취소되었습니다.');
+
+	        loadMyPage();
+	    } catch (err) {
+	        alert('예매 취소에 실패했습니다.');
+	    }
+	});
 });
 
 async function loadMyPage() {
@@ -59,25 +96,21 @@ function renderReservationList(reservationList) {
       <article class="reservation-item">
         <div class="reservation-main">
           <div class="reservation-thumb">
-            <img src="${reservation.posterUrl}"
-  alt="${reservation.concertTitle}" />
+            <img src="${reservation.posterUrl}" alt="${reservation.concertTitle}"/>
           </div>
           <div class="reservation-info">
             <div class="reservation-badge">예매완료</div>
             <h3>${reservation.concertTitle}</h3>
-            <p class="reservation-place">${reservation.artist}
-  </p>
-            <p class="reservation-date">관람일시 :
-  ${reservation.scheduleDateTime}</p>
-            <p class="reservation-seat">좌석 :
-  ${reservation.seatSummary}</p>
+            <p class="reservation-place">${reservation.artist}</p>
+            <p class="reservation-date">관람일시 : ${reservation.scheduleDateTime}</p>
+            <p class="reservation-seat">좌석 : ${reservation.seatSummary}</p>
           </div>
         </div>
         <div class="reservation-action">
-          <div class="price-
-  info">${Number(reservation.totalPrice).toLocaleString()}원</
-  div>
+          <div class="price-info">${Number(reservation.totalPrice).toLocaleString()}원</div>
+		  <button class="cancel-btn" data-reservation-no="${reservation.reservationNo}">예매취소</button>
         </div>
       </article>
     `).join('');
 }
+
